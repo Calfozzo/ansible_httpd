@@ -1,0 +1,17 @@
+
+- name: Verify the SSLProtocol directive is configured correctly in Apache
+  shell: |
+    grep -i "SSLProtocol" {{ apache_conf_dir }}/conf/httpd.conf | egrep 'TLSv1\.2|TLSv1\.3'
+  register: ssl_protocol_check
+  ignore_errors: yes
+
+- name: Set compliance status for SSLProtocol directive
+  set_fact:
+    ssl_protocol_status: "{{ 'compliant' if ssl_protocol_check.stdout else 'not compliant' }}"
+
+- name: Record compliance status for SSLProtocol directive
+  lineinfile:
+    path: "{{ csv_file}}"
+    line: "{{ inventory_hostname }},7.4,ssl_protocol_status,{{ ssl_protocol_status | trim }}"
+    create: yes
+  delegate_to: localhost

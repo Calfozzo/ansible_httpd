@@ -1,0 +1,101 @@
+---
+- name: Check if Mutex directive is configured with fcntl, flock, or file
+  ansible.builtin.shell: "grep -R 'Mutex' {{ apache_conf_dir }}/conf/*.conf"
+  register: mutex_check
+  changed_when: false
+  failed_when: false 
+  ignore_errors: true
+
+- name: Set fact for Mutex directive status
+  ansible.builtin.set_fact:
+    mutex_status: >-
+      {%- if mutex_check.stdout == "" -%}
+        not_set
+      {%- else -%}
+        set
+      {%- endif -%}
+
+- name: Determine the lock file directory if Mutex is set
+  ansible.builtin.set_fact:
+    lock_file_directory: "{{ mutex_check.stdout | regex_search('Mutex\\s+(\\w+)\\s+(.*)') | first | default('') | trim }}"
+  when: mutex_check.stdout != ""
+
+
+- name: Set lock_file_directory to empty if mutex_check is empty
+  ansible.builtin.set_fact:
+    lock_file_directory: ""
+  when: mutex_check.stdout == ""
+
+
+- name: Check if lock file directory exists
+  ansible.builtin.stat:
+    path: "{{ lock_file_directory }}"
+  register: lock_directory_stat
+  when: lock_file_directory != ""
+
+- name: Validate lock file directory conditions
+  ansible.builtin.shell: |
+    if [ -d "{{ lock_file_directory }}" ]; then
+      owner=$(stat -c '%U' "{{ lock_file_directory }}")
+      group=$(stat -c '%G' "{{ lock_file_directory }}")
+      permissions=$(stat -c '%A' "{{ lock_file_directory }}")
+      mount_point=$(df "{{ lock_file_directory }}" | tail -1 | awk '{print $1}')
+      mount_type=$(df -T "{{ lock_file_directory }}" | tail -1 | awk '{print $2}')
+
+      if [[ "$mount_type" == "nfs" ]]; then
+        echo "nfs_mounted"
+      elif [[ "$owner" != "root" || "$group" != "root" || "$permissions" =~ "w" ]]; then
+        echo "invalid_permissions"
+      elif [[ "$lock_file_directory" == *"/htdocs"* ]]; then
+        echo "in_document_root"
+      else
+        echo "valid"
+      fi
+    else
+      echo "directory_not_found"
+    fi
+  register: lock_directory_validation
+  changed_when: false
+  failed_when: false
+  ignore_errors: true 
+  when: lock_file_directory != ""
+
+- name: Set lock_directory_validation to empty if lock_file_directory is empty
+  ansible.builtin.set_fact:
+    lock_directory_validation: ""
+  when: lock_file_directory == ""
+
+- name: Set fact for Mutex validation result
+  ansible.builtin.set_fact:
+    mutex_validation_status: >-
+      {%- if lock_directory_validation.stdout == "valid" -%}
+        compliant
+      {%- elif lock_directory_validation.stdout == "nfs_mounted" -%}
+        not compliant
+      {%- elif lock_directory_validation.stdout == "invalid_permissions" -%}
+        not compliant
+      {%- elif lock_directory_validation.stdout == "in_document_root" -%}
+        not compliant
+      {%- elif lock_directory_validation.stdout == "directory_not_found" -%}
+        not compliant
+      {%- else -%}
+        compliant
+      {%- endif -%}
+  when: lock_directory_validation != ""
+
+- name: Set fact for Mutex validation result when lock_directory_validation is empty
+  ansible.builtin.set_fact:
+    mutex_validation_status: compliant
+  when: lock_directory_validation == ""
+
+- name: Append Mutex validation result to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.8,mutex_validation,{{ mutex_validation_status | trim }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display Mutex validation result
+  ansible.builtin.debug:
+    msg: "Mutex validation status is {{ mutex_validation_status }} on {{ inventory_hostname }}"

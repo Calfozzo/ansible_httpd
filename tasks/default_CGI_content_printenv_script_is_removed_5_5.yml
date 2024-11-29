@@ -1,0 +1,44 @@
+---
+- name: Locate cgi-bin directories in Apache configuration
+  ansible.builtin.shell: |
+    grep -E 'ScriptAlias|ScriptAliasMatch|ScriptInterpreterSource' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
+  register: cgi_bin_directives
+  changed_when: false
+  ignore_errors: yes
+
+- name: Extract cgi-bin directories from configuration
+  ansible.builtin.set_fact:
+    cgi_bin_dirs: "{{ cgi_bin_directives.stdout_lines | map('regex_replace', '^.*?\\s+(.*?)(\\s|$)', '\\1') | list }}"
+
+- name: Check if printenv CGI is installed in cgi-bin directories
+  ansible.builtin.shell: |
+    for dir in {{ cgi_bin_dirs | join(' ') }}; do
+      if [ -d "$dir" ]; then
+        find "$dir" -name "printenv" -type f && exit 0
+      fi
+    done
+    exit 1
+  register: printenv_check
+  changed_when: false
+  ignore_errors: yes
+
+- name: Set cgi-bin compliance status
+  ansible.builtin.set_fact:
+    cgi_status: >-
+      {%- if printenv_check.rc == 0 -%}
+        not_compliant
+      {%- else -%}
+        compliant
+      {%- endif -%}
+
+- name: Append cgi-bin compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},5.5,cgi_bin_compliance,{{ cgi_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display cgi-bin compliance status
+  ansible.builtin.debug:
+    msg: "CGI printenv is {{ cgi_status }} in cgi-bin directories on {{ inventory_hostname }}"

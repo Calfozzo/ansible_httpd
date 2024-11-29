@@ -1,0 +1,71 @@
+---
+- name: Check if CoreDumpDirectory directive is set in Apache configuration files
+  ansible.builtin.shell: "grep -R '^CoreDumpDirectory' {{ apache_conf_dir }}/*.conf"
+  register: coredump_check
+  changed_when: false
+  failed_when: false  
+  ignore_errors: true  
+
+- name: Set fact for CoreDumpDirectory status
+  ansible.builtin.set_fact:
+    coredump_directory_status: >-
+      {%- if coredump_check.stdout == "" -%}
+        not set
+      {%- else -%}
+        set
+      {%- endif -%}
+
+- name: Determine if CoreDumpDirectory is correctly configured
+  ansible.builtin.shell: |
+    if [ "{{ coredump_check.stdout }}" != "" ]; then
+      coredump_dir=$(echo "{{ coredump_check.stdout }}" | awk '{print $2}' | head -n 1)
+      if [ -d "$coredump_dir" ]; then
+        owner=$(stat -c '%U' "$coredump_dir")
+        group=$(stat -c '%G' "$coredump_dir")
+        permissions=$(stat -c '%A' "$coredump_dir")
+
+        # Check conditions
+        if [[ "$coredump_dir" == *"/htdocs"* ]]; then
+          echo "coredump_dir_in_doc_root"
+        elif [[ "$owner" != "root" || "$group" != "apache" || "$permissions" =~ "rwx" ]]; then
+          echo "coredump_dir_invalid_permissions"
+        else
+          echo "valid"
+        fi
+      else
+        echo "coredump_dir_not_found"
+      fi
+    else
+      echo "coredump_dir_not_set"
+    fi
+  register: coredump_validation
+  changed_when: false
+  failed_when: false  
+  ignore_errors: true 
+
+- name: Set fact for CoreDumpDirectory validation result
+  ansible.builtin.set_fact:
+    coredump_validation_status: >-
+      {%- if coredump_validation.stdout == "valid" -%}
+        compliant
+      {%- elif coredump_validation.stdout == "coredump_dir_in_doc_root" -%}
+        not compliant
+      {%- elif coredump_validation.stdout == "coredump_dir_invalid_permissions" -%}
+        not compliant
+      {%- elif coredump_validation.stdout == "coredump_dir_not_found" -%}
+        not compliant
+      {%- else -%}
+        not compliant
+      {%- endif -%}
+
+- name: Append CoreDumpDirectory validation result to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.7,coredump_directory,{{ coredump_validation_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display CoreDumpDirectory validation result
+  ansible.builtin.debug:
+    msg: "CoreDumpDirectory status is {{ coredump_validation_status }} on {{ inventory_hostname }}"

@@ -1,0 +1,82 @@
+---
+- name: Hardening scanner Apache
+  hosts: LOCAL
+  become: true
+
+
+  vars:
+    csv_file: "your_path_for_csv/hardening_scanner_httpd.csv"
+  
+
+  tasks:
+
+  #  - name: Get RHEL version
+   #   ansible.builtin.set_fact:
+   #     rhel_version: "{{ ansible_distribution_version }}"
+
+    #- name: Set paths based on RHEL version
+    #  ansible.builtin.set_fact:
+    #    apache_bin_dir: "{{ '/path/to/httpd/root/RHEL7' if rhel_version is version('7', '==') else '/path/to/httpd/root/RHEL8' }}"
+    #    apache_conf_dir: "{{ '/path/to/httpd/conf/RHEL7' if rhel_version is version('7', '==') else '/path/to/httpd/conf/RHEL8' }}"
+
+    - name: Create CSV header
+      ansible.builtin.lineinfile:
+        path: "{{ csv_file }}"
+        line: "Hostname,Number Task,Check,Status"
+        create: yes
+        #owner: awx
+        #group: awx
+        state: present
+      when: not lookup('file', csv_file, errors='ignore')
+      delegate_to: localhost
+
+          
+    - include_tasks: tasks/access_to_git_files_is_restricted_5_11.yml
+    - include_tasks: tasks/access_to_OS_root_directory_is_denied_by_default_4_1.yml
+    - include_tasks: tasks/access_to_svn_files_is_restricted_5_12.yml
+    - include_tasks: tasks/apache_directories_and_files_are_owned_by_root_3_4.yml
+    - include_tasks: tasks/apache_login_shell_3_2.yml
+    - include_tasks: tasks/apache_user_account_is_locked_3_3.yml
+    - include_tasks: tasks/appropriate_access_to_web_content_is_allowed_4_2.yml
+    - include_tasks: tasks/autoindex_module_is_disabled_2_5.yml
+    - include_tasks: tasks/basic_and_digest_authentication_modules_are_disabled_2_9.yml
+    - include_tasks: tasks/core_dump_directory_is_secured_3_7.yml
+    - include_tasks: tasks/default_CGI_content_test_cgi_script_is_removed_5_6.yml
+    - include_tasks: tasks/default_CGI_content_printenv_script_is_removed_5_5.yml
+    - include_tasks: tasks/error_log_filename_and_severity_level_are_configured_correctly_6_1.yml
+    - include_tasks: tasks/group_is_set_correctly_on_apache_directories_and_files_3_5.yml
+    - include_tasks: tasks/group_write_access_for_the_document_root_directories_and_files_is_properly_restricted_3_12.yml
+    - include_tasks: tasks/group_write_access_for_the_apache_directories_and_files_is_properly_restricted_3_11.yml
+    - include_tasks: tasks/http_request_methods_are_restricted_5_7.yml
+    - include_tasks: tasks/http_trace_method_is_disabled_5_8.yml
+    - include_tasks: tasks/info_module_is_disabled_2_8.yml
+    - include_tasks: tasks/insecure_ssl_renegotiation_is_not_enabled_7_6.yml
+    - include_tasks: tasks/keepalive_is_enabled_9_2.yml
+    - include_tasks: tasks/keepalivetimeout_is_set_to_a_value_of_15_or_less_9_4.yml
+    - include_tasks: tasks/lock_file_is_secured_3_8.yml
+    - include_tasks: tasks/log_config_module_is_enabled_2_2.yml
+    - include_tasks: tasks/maxkeepaliverequests_is_set_to_a_Value_of_100_or_greater_9_3.yml
+    - include_tasks: tasks/mod_ssl_and_or_mod_nss_is_installed_7_1.yml
+    - include_tasks: tasks/old_HTTP_protocol_versions_are_disallowed_5_9.yml
+    - include_tasks: tasks/options_for_other_directories_are_minimized_5_3.yml
+    - include_tasks: tasks/options_for_the_OS_root_directory_are_restricted_5_1.yml
+    - include_tasks: tasks/options_for_the_web_root_directory_are_restricted_5_2.yml
+    - include_tasks: tasks/other_write_access_on_apache_directories_and_files_is_restricted_3_6.yml
+    - include_tasks: tasks/override_is_disabled_for_all_directories_4_4.yml
+    - include_tasks: tasks/override_is_disabled_for_the_OS_root_directory_4_3.yml
+    - include_tasks: tasks/pid_file_is_secured_3_9.yml
+    - include_tasks: tasks/proxy_modules_are_disabled_if_not_in_use_2_6.yml
+    - include_tasks: tasks/scoreBoard_file_is_secured_3_10.yml
+    - include_tasks: tasks/server_access_log_is_configured_correctly_6_3.yml
+    - include_tasks: tasks/serversignature_is_not_enabled_8_2.yml
+    - include_tasks: tasks/ServerTokens_is_set_to_Prod_or_ProductOnly_8_1.yml
+    - include_tasks: tasks/ssl_compression_is_not_enabled_7_7.yml
+    - include_tasks: tasks/status_module_is_disabled_2_4.yml
+    - include_tasks: tasks/syslog_facility_is_configured_for_error_logging_6_2.yml
+    - include_tasks: tasks/timeout_is_set_to_ten_or_less_9_1.yml
+    - include_tasks: tasks/timeout_limits_for_request_headers_is_set_to_40_or_less_9_5.yml
+    - include_tasks: tasks/TLSv1.0_and_TLSv1.1_rotocols_are_disabled_7_4.yml
+    - include_tasks: tasks/user_directories_module_is_disabled_2_7.yml
+    - include_tasks: tasks/webdav_modules_are_disabled_2_3.yml
+    - include_tasks: tasks/apache_user_configuration_3_1.yml
+

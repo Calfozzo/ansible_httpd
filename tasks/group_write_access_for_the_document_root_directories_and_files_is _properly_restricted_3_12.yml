@@ -1,0 +1,28 @@
+---
+- name: Get the Apache group from the configuration
+  ansible.builtin.shell: "grep '^Group' {{ apache_conf_dir }}/conf/httpd.conf | awk '{print $2}'"
+  register: apache_group
+  changed_when: false
+  ignore_errors: yes
+
+- name: Identify files or directories in the Document Root with Apache group write access
+  ansible.builtin.shell: "find -L /var/www/html -group {{ apache_group.stdout }} -perm /g=w -ls"
+  register: group_write_access_files
+  changed_when: false
+  ignore_errors: yes
+
+- name: Set access status
+  ansible.builtin.set_fact:
+    group_write_access_status: "{{ 'compliant' if group_write_access_files.stdout == '' else 'not compliant' }}"
+
+- name: Append group write access status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.12,docroot_group_write_access,{{ group_write_access_status }}"
+  delegate_to: localhost
+  
+- name: Display Document Root group write access status
+  ansible.builtin.debug:
+    msg: "Group write access files in Document Root: {{ group_write_access_status }} on {{ inventory_hostname }}"
+  ignore_errors: yes

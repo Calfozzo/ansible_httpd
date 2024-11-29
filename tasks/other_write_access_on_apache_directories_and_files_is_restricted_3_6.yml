@@ -1,0 +1,23 @@
+---
+- name: Identify files or directories in Apache directory with other write access (excluding symlinks)
+  ansible.builtin.shell: "find {{ apache_bin_dir }} -type f ! -user root -perm /o=w -print -o -type d ! -user root -perm /o=w -print"
+  register: other_write_access_check
+  changed_when: false
+  failed_when: other_write_access_check.rc != 0  
+  ignore_errors: true 
+
+- name: Determine if files/directories with other write access exist
+  ansible.builtin.set_fact:
+    other_write_access_status: "{{ 'not compliant' if other_write_access_check.stdout != '' else 'compliant' }}"
+
+- name: Append other write access status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.6,Other Write Access on Apache Directories and Files Is Restricted,{{ other_write_access_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display other write access status
+  ansible.builtin.debug:
+    msg: "Other write access status in {{ apache_bin_dir }} is {{ other_write_access_status }} on {{ inventory_hostname }}"

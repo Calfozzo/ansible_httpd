@@ -1,0 +1,23 @@
+---
+- name: Identify files in Apache directories other than htdocs with a group other than root
+  ansible.builtin.shell: "find {{ apache_bin_dir }} -path {{ apache_bin_dir }}/htdocs -prune -o -type f ! -group root -print"
+  register: non_root_group_files_check
+  changed_when: false
+  failed_when: non_root_group_files_check.rc != 0  # Fallisce se il comando non riesce
+  ignore_errors: true  # Continua anche se il task fallisce
+
+- name: Determine if non-root group files exist
+  ansible.builtin.set_fact:
+    non_root_group_files_status: "{{ 'compliant' if non_root_group_files_check.stdout != '' else 'not compliant' }}"
+
+- name: Append non-root group files status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.5, Group Is Set Correctly on Apache Directories and Files,{{ non_root_group_files_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display non-root group files status
+  ansible.builtin.debug:
+    msg: "Non-root group files status in {{ apache_bin_dir }} is {{ non_root_group_files_status }} on {{ inventory_hostname }}"

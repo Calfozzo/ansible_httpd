@@ -1,0 +1,23 @@
+---
+- name: Check if Apache account is locked
+  ansible.builtin.shell: "passwd -S apache"
+  register: apache_account_status
+  changed_when: false
+  failed_when: apache_account_status.rc != 0  
+  ignore_errors: true  
+
+- name: Determine Apache account lock status
+  ansible.builtin.set_fact:
+    apache_lock_status: "{{ 'compliant' if 'L' in apache_account_status.stdout.split() else 'not compliant' }}"
+
+- name: Append Apache account lock status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }}, 3.3, Apache User Account Is Locked ,{{ apache_lock_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display Apache account lock status
+  ansible.builtin.debug:
+    msg: "Apache account is {{ apache_lock_status }} on {{ inventory_hostname }}"

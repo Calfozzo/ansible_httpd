@@ -1,0 +1,23 @@
+---
+- name: Check if log_config module is enabled
+  ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep log_config"
+  register: log_config_check
+  failed_when: log_config_check.rc != 0 
+  changed_when: false
+  ignore_errors: true
+
+- name: Determine log_config status
+  ansible.builtin.set_fact:
+    log_config_status: "{{ 'not compliant' if log_config_check.rc == 0 else 'compliant' }}"
+
+- name: Append log_config status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},2.2,log_config,{{ log_config_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display log_config status
+  ansible.builtin.debug:
+    msg: "Module log_config is {{ log_config_status }} on {{ inventory_hostname }}"

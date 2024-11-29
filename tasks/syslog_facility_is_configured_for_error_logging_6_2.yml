@@ -1,0 +1,44 @@
+- name: Verify ErrorLog directive for syslog facility
+  ansible.builtin.shell: |
+    if grep -q '^ErrorLog syslog:' {{ apache_conf_dir }}/conf.d/*.conf; then
+      echo "ErrorLog is configured with syslog facility"
+    else
+      echo "ErrorLog is NOT configured with syslog facility" && exit 1
+    fi
+  register: error_log_check
+  ignore_errors: yes
+
+- name: Set the error log compliance status
+  ansible.builtin.set_fact:
+    error_log_status: "{{ 'not compliant' if error_log_check.rc != 0 else 'compliant' }}"
+
+- name: Verify ErrorLog for each virtual host
+  ansible.builtin.shell: |
+    virtual_hosts=$(grep -r '<VirtualHost' {{ apache_conf_dir }}/conf.d/*.conf | wc -l)
+    error_log_virtual_hosts=$(grep -r '^ErrorLog' {{ apache_conf_dir }}/conf.d/*.conf | grep -o '<VirtualHost.*' | wc -l)
+    
+    if [[ "$virtual_hosts" -eq "$error_log_virtual_hosts" ]]; then
+      echo "Each virtual host has an ErrorLog directive"
+    else
+      echo "Not all virtual hosts have an ErrorLog directive" && exit 1
+    fi
+  register: virtual_host_error_log_check
+  ignore_errors: yes
+
+- name: Set the virtual host error log compliance status
+  ansible.builtin.set_fact:
+    virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
+
+- name: Log compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    line: "{{ inventory_hostname }},6.2,ErrorLog Check,{{ error_log_status | trim }}"
+    create: yes
+  delegate_to: localhost
+
+- name: Log Virtual Host ErrorLog compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    line: "{{ inventory_hostname }},6.2,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status | trim }}"
+    create: yes
+  delegate_to: localhost

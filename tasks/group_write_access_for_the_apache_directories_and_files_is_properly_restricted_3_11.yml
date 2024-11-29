@@ -1,0 +1,22 @@
+- name: Find files or directories with group write access
+  ansible.builtin.shell: "find {{ apache_bin_dir }} ! -type l -perm /g=w -ls"
+  register: group_write_access_files
+  changed_when: false
+  ignore_errors: yes
+
+- name: Set the status of group write access check
+  ansible.builtin.set_fact:
+    group_write_access_status: "{{ 'not compliant' if group_write_access_files.stdout else 'compliant' }}"
+
+- name: Append group write access check result to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.11,group_write_access,{{ group_write_access_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display files or directories with group write access
+  ansible.builtin.debug:
+    msg: "Files or directories with group write access: {{ group_write_access_files.stdout }}"
+  when: group_write_access_status == 'not compliant'

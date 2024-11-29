@@ -1,0 +1,24 @@
+---
+- name: Check if User Directories module is enabled
+  ansible.builtin.shell: "{{ apache_bin_dir }}/apachectl -M | grep userdir_"
+  register: userdir_check
+  failed_when: userdir_check.rc != 0 
+  changed_when: false
+  ignore_errors: true
+
+- name: Determine User Directories module status
+  ansible.builtin.set_fact:
+    userdir_status: "{{ 'compliant' if userdir_check.rc == 0 else 'not compliant' }}"
+
+- name: Append User Directories module status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},2.7,userdir,{{ userdir_status | trim }}" 
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display User Directories module status
+  ansible.builtin.debug:
+    msg: "Module userdir is {{ userdir_status }} on {{ inventory_hostname }}"
+

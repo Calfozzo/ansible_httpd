@@ -1,0 +1,70 @@
+- name: Verify LogLevel for core and other modules
+  ansible.builtin.shell: |
+    core_log_level=$(grep -i '^LogLevel' {{ apache_conf_dir }}/conf/httpd.conf | grep 'core' | awk '{print $2}')
+    other_log_level=$(grep -i '^LogLevel' {{ apache_conf_dir }}/conf/httpd.conf | grep -v 'core' | awk '{print $2}')
+    
+    # Check if the levels are compliant
+    if [[ "$core_log_level" =~ ^(info|notice)$ ]] && [[ "$other_log_level" =~ ^(info|notice|debug)$ ]]; then
+      echo "LogLevel is compliant"
+    else
+      echo "LogLevel is NOT compliant" && exit 1
+    fi
+  register: log_level_check
+  ignore_errors: yes
+
+- name: Set the log level compliance status
+  ansible.builtin.set_fact:
+    log_level_status: "{{ 'not compliant' if log_level_check.rc != 0 else 'compliant' }}"
+
+- name: Verify ErrorLog directive is configured appropriately
+  ansible.builtin.shell: |
+    if grep -q '^ErrorLog' {{ apache_conf_dir }}/conf/httpd.conf; then
+      echo "ErrorLog directive is configured"
+    else
+      echo "ErrorLog directive is NOT configured" && exit 1
+    fi
+  register: error_log_check
+  ignore_errors: yes
+
+- name: Set the error log compliance status
+  ansible.builtin.set_fact:
+    error_log_status: "{{ 'not compliant' if error_log_check.rc != 0 else 'compliant' }}"
+
+- name: Verify ErrorLog for each virtual host
+  ansible.builtin.shell: |
+    virtual_hosts=$(grep -r '<VirtualHost' {{ apache_conf_dir }}/conf/httpd.conf | wc -l)
+    error_log_virtual_hosts=$(grep -r '^ErrorLog' {{ apache_conf_dir }}/conf/httpd.conf| grep -o '<VirtualHost.*' | wc -l)
+    
+    if [[ "$virtual_hosts" -eq "$error_log_virtual_hosts" ]]; then
+      echo "Each virtual host has an ErrorLog directive"
+    else
+      echo "Not all virtual hosts have an ErrorLog directive" && exit 1
+    fi
+  register: virtual_host_error_log_check
+  ignore_errors: yes
+
+- name: Set the virtual host error log compliance status
+  ansible.builtin.set_fact:
+    virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
+
+- name: Log compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file}}"
+    line: "{{ inventory_hostname }},6.1,LogLevel Check,{{ log_level_status }}"
+    create: yes
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Log ErrorLog compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    line: "{{ inventory_hostname }},6.1,ErrorLog Check,{{ error_log_status }}"
+    create: yes
+    insertafter: EOF
+
+- name: Log Virtual Host ErrorLog compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    line: "{{ inventory_hostname }},6.1,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status }}"
+    create: yes
+    insertafter: EOF

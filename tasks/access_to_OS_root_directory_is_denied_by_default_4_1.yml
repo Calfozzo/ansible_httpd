@@ -1,0 +1,68 @@
+- name: Search for root "<Directory>" element in Apache configuration files
+  ansible.builtin.shell: |
+    perl -ne 'print if /^ *<Directory *\//i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf
+  register: directory_output
+  changed_when: false
+  ignore_errors: yes
+
+- name: Set root_directory_status based on the presence of <Directory> element
+  ansible.builtin.set_fact:
+    root_directory_status: "{{ 'not_compliant' if directory_output.stdout == '' else 'compliant' }}"
+
+- name: Check Order/Deny/Allow directives in the root <Directory>
+  ansible.builtin.shell: |
+    echo "{{ directory_output.stdout }}" | grep -E 'Order|Deny|Allow'
+  register: order_deny_allow_output
+  changed_when: false
+  ignore_errors: yes
+
+- name: Validate Order/Deny/Allow configuration
+  ansible.builtin.set_fact:
+    order_deny_allow_status: >-
+      {%- if 'Order deny,allow' in order_deny_allow_output.stdout and
+              'Deny from all' in order_deny_allow_output.stdout and
+              not ('Allow' in order_deny_allow_output.stdout or 'Require' in order_deny_allow_output.stdout) -%}
+        compliant
+      {%- else -%}
+        not_compliant
+      {%- endif -%}
+
+- name: Check Require directives in the root <Directory>
+  ansible.builtin.shell: |
+    echo "{{ directory_output.stdout }}" | grep -E 'Require'
+  register: require_output
+  changed_when: false
+  ignore_errors: yes
+
+- name: Validate Require method configuration
+  ansible.builtin.set_fact:
+    require_method_status: >-
+      {%- if 'Require all denied' in require_output.stdout and
+              not ('Allow' in require_output.stdout or 'Deny' in require_output.stdout) -%}
+        compliant
+      {%- else -%}
+        not_compliant
+      {%- endif -%}
+
+- name: Determine overall compliance status
+  ansible.builtin.set_fact:
+    overall_status: >-
+      {%- if root_directory_status == 'compliant' and
+              order_deny_allow_status == 'compliant' and
+              require_method_status == 'compliant' -%}
+        compliant
+      {%- else -%}
+        not_compliant
+      {%- endif -%}
+
+- name: Append directory compliance status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},4.1,root_directory_configuration,{{ overall_status }}"
+  when: overall_status in ['compliant', 'not_compliant']
+  delegate_to: localhost
+
+- name: Display compliance status for the root <Directory>
+  ansible.builtin.debug:
+    msg: "Root <Directory> compliance status: {{ root_directory_status }}, Order/Deny/Allow status: {{ order_deny_allow_status }}, Require method status: {{ require_method_status }} on {{ inventory_hostname }}"

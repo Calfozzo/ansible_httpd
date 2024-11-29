@@ -1,0 +1,28 @@
+---
+- name: Check for <Directory> elements in Apache configuration files
+  ansible.builtin.shell: |
+    perl -ne 'print if /^ *<Directory */i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
+  register: directory_check
+  changed_when: false
+  ignore_errors: yes
+
+- name: Set Options compliance status for Includes
+  ansible.builtin.set_fact:
+    options_status: >-
+      {%- if directory_check.stdout | regex_search('Options.*Includes') -%}
+        not_compliant
+      {%- else -%}
+        compliant
+      {%- endif -%}
+
+- name: Append Options compliance status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},5.3,directory_options_includes,{{ options_status | trim }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display Options compliance status
+  ansible.builtin.debug:
+    msg: "Options directives do not enable Includes: {{ options_status }} on {{ inventory_hostname }}"

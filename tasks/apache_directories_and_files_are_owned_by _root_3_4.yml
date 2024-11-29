@@ -1,0 +1,23 @@
+---
+- name: Identify files in the Apache directory not owned by root
+  ansible.builtin.shell: "find {{ apache_bin_dir }} ! -user root"
+  register: non_root_files_check
+  changed_when: false
+  failed_when: non_root_files_check.rc != 0
+  ignore_errors: true
+
+- name: Determine if non-root files exist
+  ansible.builtin.set_fact:
+    non_root_files_status: "{{ 'not compliant' if non_root_files_check.stdout != '' else 'compliant' }}"
+
+- name: Append non-root files status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.4,Apache Directories and Files Are Owned By Root,{{ non_root_files_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display non-root files status
+  ansible.builtin.debug:
+    msg: "Non-root files status in {{ apache_bin_dir }} is {{ non_root_files_status }} on {{ inventory_hostname }}"

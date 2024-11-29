@@ -1,0 +1,23 @@
+---
+- name: Check if Info module is enabled
+  ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep info_module"
+  register: info_module_check
+  failed_when: info_module_check.rc != 0
+  changed_when: false
+  ignore_errors: true
+
+- name: Determine Info module status
+  ansible.builtin.set_fact:
+    info_module_status: "{{ 'compliant' if info_module_check.rc == 0 else 'not compliant' }}"
+
+- name: Append Info module status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},2.8,info_module,{{ info_module_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display Info module status
+  ansible.builtin.debug:
+    msg: "Module Info is {{ info_module_status }} on {{ inventory_hostname }}"

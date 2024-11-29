@@ -1,0 +1,31 @@
+- name: Check Apache login shell
+  ansible.builtin.shell: "grep '^apache' /etc/passwd"
+  register: apache_shell_check
+  changed_when: false
+  failed_when: apache_shell_check.rc != 0
+  ignore_errors: true
+
+
+- name: Set default apache_shell_status 
+  ansible.builtin.set_fact:
+    apache_shell_status: "not compliant"
+
+- name: Determine Apache login shell status
+  ansible.builtin.set_fact:
+    apache_shell: "{{ apache_shell_check.stdout.split(':')[-1] | trim }}"
+    apache_shell_status: "{{ 'compliant' if apache_shell in ['/sbin/nologin', '/dev/null'] else 'not compliant' }}"
+  when: apache_shell_check is defined and apache_shell_check.stdout is defined and apache_shell_check.stdout != ""
+
+
+- name: Append Apache login shell status to CSV file
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    create: yes
+    line: "{{ inventory_hostname }},3.2,apache_login_shell,{{ apache_shell_status }}"
+    insertafter: EOF
+  delegate_to: localhost
+
+- name: Display Apache login shell status
+  ansible.builtin.debug:
+    msg: "Apache account shell is {{ apache_shell | default('not found') }} on {{ inventory_hostname }} ({{ apache_shell_status }})"
+

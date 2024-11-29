@@ -1,0 +1,25 @@
+- name: Verify the presence of DirectoryMatch directive for .git
+  ansible.builtin.shell: |
+    if grep -q '<DirectoryMatch "/\.git">' {{ apache_conf_dir }}/conf.d/*.conf && \
+       grep -q 'Require all denied' {{ apache_conf_dir }}/conf.d/*.conf; then
+      echo "DirectoryMatch directive is set correctly"
+    else
+      echo "DirectoryMatch directive is NOT set correctly" && exit 1
+    fi
+  register: directory_match_check
+  ignore_errors: yes
+
+- name: Set the directory match status
+  ansible.builtin.set_fact:
+    directory_match_status: "{{ 'not compliant' if directory_match_check.rc != 0 else 'compliant' }}"
+
+- name: Verifica che csv_file sia definito
+  ansible.builtin.debug:
+    msg: "Il file CSV sarà salvato in: {{ csv_file }}"
+
+- name: Log the compliance status to CSV
+  ansible.builtin.lineinfile:
+    path: "{{ csv_file }}"
+    line: "{{ inventory_hostname }},5.11,access_to_git_files_is_restricted,{{ directory_match_status }}"
+    create: yes
+  delegate_to: localhost
