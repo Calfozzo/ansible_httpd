@@ -1,13 +1,24 @@
+- name: Set Default status 
+  ansible.builtin.set_fact:
+    cgi_bin_dirs: "not set"
+    test_cgi_check: "not set"
+    test_cgi_status: "not compliant"
+
+
 - name: Extract cgi-bin directories from configuration
   ansible.builtin.command: |
     grep -E '^(Script|ScriptAlias|ScriptAliasMatch|ScriptInterpreterSource)' {{ apache_conf_dir }}/conf/httpd.conf
   register: cgi_bin_directives
   changed_when: false
   failed_when: false
+  ignore_errors: yes
+
 
 - name: Set fact for cgi-bin directories
   ansible.builtin.set_fact:
     cgi_bin_dirs: "{{ cgi_bin_directives.stdout_lines | map('regex_replace', '^.*?\\s+(.*?)(\\s|$)', '\\1') | list }}"
+  ignore_errors: yes  
+
 
 - name: Check if test-cgi script exists in cgi-bin directories
   ansible.builtin.shell: |
@@ -25,6 +36,8 @@
 - name: Set test_cgi_status compliance
   ansible.builtin.set_fact:
     test_cgi_status: "{{ 'compliant' if test_cgi_check.rc != 0 else 'not compliant' }}"
+  ignore_errors: yes
+
 
 - name: Append test_cgi_status to CSV file
   ansible.builtin.lineinfile:
@@ -33,7 +46,3 @@
     line: "{{ inventory_hostname }},5.6,test_cgi_check_id,{{ test_cgi_status }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display test_cgi_status
-  ansible.builtin.debug:
-    msg: "test-cgi script status is {{ test_cgi_status }} on {{ inventory_hostname }}"

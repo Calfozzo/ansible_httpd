@@ -48,3 +48,4 @@
     line: "{{ inventory_hostname }},5.5,cgi_bin_compliance,{{ cgi_status }}"
     insertafter: EOF
   delegate_to: localhost
+  
