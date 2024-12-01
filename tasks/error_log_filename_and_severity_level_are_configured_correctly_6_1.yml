@@ -1,3 +1,10 @@
+- name: Set Default status
+  ansible.builtin.set_fact:
+    log_level_status: "not compliant"
+    error_log_status: "not compliant"
+    virtual_host_error_log_status: "not compliant"
+
+
 - name: Verify LogLevel for core and other modules
   ansible.builtin.shell: |
     core_log_level=$(grep -i '^LogLevel' {{ apache_conf_dir }}/conf/httpd.conf | grep 'core' | awk '{print $2}')
@@ -15,6 +22,7 @@
 - name: Set the log level compliance status
   ansible.builtin.set_fact:
     log_level_status: "{{ 'not compliant' if log_level_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
 
 - name: Verify ErrorLog directive is configured appropriately
   ansible.builtin.shell: |
@@ -29,6 +37,7 @@
 - name: Set the error log compliance status
   ansible.builtin.set_fact:
     error_log_status: "{{ 'not compliant' if error_log_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
 
 - name: Verify ErrorLog for each virtual host
   ansible.builtin.shell: |
@@ -46,6 +55,7 @@
 - name: Set the virtual host error log compliance status
   ansible.builtin.set_fact:
     virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
 
 - name: Log compliance status to CSV
   ansible.builtin.lineinfile:
@@ -61,6 +71,7 @@
     line: "{{ inventory_hostname }},6.1,ErrorLog Check,{{ error_log_status }}"
     create: yes
     insertafter: EOF
+    delegate_to: localhost
 
 - name: Log Virtual Host ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
@@ -68,3 +79,4 @@
     line: "{{ inventory_hostname }},6.1,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status }}"
     create: yes
     insertafter: EOF
+    delegate_to: localhost
