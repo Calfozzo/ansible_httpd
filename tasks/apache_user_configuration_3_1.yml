@@ -1,4 +1,9 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    apache_user: "not compliant"
+    apache_user_status: "not compliant"
+
+
 - name: Check Apache User Configuration
   ansible.builtin.shell: "grep '^User ' {{ apache_conf_dir }}/conf/httpd.conf"
   register: apache_user_check
@@ -6,9 +11,12 @@
   failed_when: false 
   ignore_errors: true 
 
+  
 - name: Set Apache user variable
   ansible.builtin.set_fact:
     apache_user: "{{ apache_user_check.stdout.split()[1] if apache_user_check.stdout | length > 0 else 'not found' }}"
+  ignore_errors: true 
+
 
 - name: Check if Apache user is non-root
   ansible.builtin.shell: "id -u {{ apache_user }}"
@@ -17,6 +25,7 @@
   failed_when: false  
   ignore_errors: true 
   when: apache_user != 'not found'
+
 
 - name: Determine if Apache user UID is less than 1000
   ansible.builtin.set_fact:
@@ -28,6 +37,8 @@
       {% else %}
         not compliant
       {% endif %}
+  ignore_errors: true 
+  
 
 - name: Append Apache user status to CSV file
   ansible.builtin.lineinfile:
@@ -35,7 +46,3 @@
     create: yes
     line: "{{ inventory_hostname }},3.1,apache_user,{{ apache_user_status | trim }}"
   delegate_to: localhost
-
-- name: Display Apache user status
-  ansible.builtin.debug:
-    msg: "Apache user {{ apache_user }} is {{ apache_user_status }} on {{ inventory_hostname }}"
