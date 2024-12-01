@@ -1,7 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
     info_module_status: "not compliant"
-  ignore_errors: true
 
 
 - name: Check if Info module is enabled
@@ -15,6 +14,7 @@
 - name: Determine Info module status
   ansible.builtin.set_fact:
     info_module_status: "{{ 'compliant' if info_module_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: true
 
 
 - name: Append Info module status to CSV file
