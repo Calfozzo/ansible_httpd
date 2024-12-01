@@ -1,8 +1,15 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    directory_match_status: "not compliant"
+
+
 - name: Locate the Apache configuration files
   ansible.builtin.find:
     paths: "{{ apache_conf_dir }}"
     patterns: "*.conf"
   register: apache_conf_files
+  ignore_errors: yes
+
 
 - name: Verify the presence of DirectoryMatch directive for .svn
   ansible.builtin.shell: |
@@ -15,9 +22,12 @@
   register: directory_match_check
   ignore_errors: yes
 
+
 - name: Set the directory match status
   ansible.builtin.set_fact:
     directory_match_status: "{{ 'not compliant' if directory_match_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
+  
 
 - name: Log the compliance status to CSV
   ansible.builtin.lineinfile:

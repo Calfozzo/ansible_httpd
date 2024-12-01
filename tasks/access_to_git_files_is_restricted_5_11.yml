@@ -1,3 +1,7 @@
+- name: Set Default status
+  ansible.builtin.set_fact:
+    directory_match_status: "not compliant"
+
 - name: Verify the presence of DirectoryMatch directive for .git
   ansible.builtin.shell: |
     if grep -q '<DirectoryMatch "/\.git">' {{ apache_conf_dir }}/conf.d/*.conf && \
@@ -12,7 +16,8 @@
 - name: Set the directory match status
   ansible.builtin.set_fact:
     directory_match_status: "{{ 'not compliant' if directory_match_check.rc != 0 else 'compliant' }}"
-
+  ignore_errors: yes
+  
 - name: Verifica che csv_file sia definito
   ansible.builtin.debug:
     msg: "Il file CSV sarà salvato in: {{ csv_file }}"
