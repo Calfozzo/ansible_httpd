@@ -1,4 +1,8 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    proxy_modules_status: "not compliant"
+
+
 - name: Check if proxy modules are enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep proxy_"
   register: proxy_modules_check
@@ -6,9 +10,12 @@
   failed_when: proxy_modules_check.rc == 0  
   ignore_errors: true
 
+
 - name: Determine proxy modules status
   ansible.builtin.set_fact:
     proxy_modules_status: "{{ 'not compliant' if proxy_modules_check.rc == 0 else 'compliant' }}"
+  ignore_errors: true
+
 
 - name: Append proxy modules status to CSV file
   ansible.builtin.lineinfile:
@@ -17,7 +24,3 @@
     line: "{{ inventory_hostname }},2.6,proxy_modules,{{ proxy_modules_status | trim }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display proxy modules status
-  ansible.builtin.debug:
-    msg: "Proxy modules are {{ proxy_modules_status }} on {{ inventory_hostname }}"
