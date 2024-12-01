@@ -1,3 +1,8 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    rewrite_status: "not compliant"
+
+
 - name: Verify there is a rewrite condition within the global server context
   ansible.builtin.shell: |
     if grep -q 'RewriteEngine On' {{ apache_conf_dir }}/conf/*.conf && \
@@ -9,9 +14,12 @@
   register: rewrite_check
   ignore_errors: yes
 
+
 - name: Set the rewrite status
   ansible.builtin.set_fact:
     rewrite_status: "{{ 'not compliant' if rewrite_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
+
 
 - name: Log the compliance status to CSV
   ansible.builtin.lineinfile:
