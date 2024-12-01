@@ -1,10 +1,15 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    options_status: "not compliant"
+
+
 - name: Check for <Directory> elements in Apache configuration files
   ansible.builtin.shell: |
     perl -ne 'print if /^ *<Directory */i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: directory_check
   changed_when: false
   ignore_errors: yes
+
 
 - name: Set Options compliance status for None or Multiviews
   ansible.builtin.set_fact:
@@ -14,6 +19,8 @@
       {%- else -%}
         not_compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Append Options compliance status to CSV file
   ansible.builtin.lineinfile:
@@ -21,7 +28,4 @@
     create: yes
     line: "{{ inventory_hostname }},5.2,directory_options_multiviews,{{ options_status | trim }}"
   delegate_to: localhost
-  
-- name: Display compliance status for Options directive
-  ansible.builtin.debug:
-    msg: "Options status in <Directory> is {{ options_status }} on {{ inventory_hostname }}"
+ 
