@@ -1,13 +1,22 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    scoreboard_file_status: "not specified"
+    ownership_status: "not compliant"
+    filesystem_compliance: "not compliant"
+    overall_compliance: "not compliant"
+    
+
 - name: Check if ScoreBoardFile is specified in Apache configuration
   ansible.builtin.shell: "grep -r 'ScoreBoardFile' {{ apache_conf_dir }}/conf/*.conf"
   register: scoreboard_file_check
   changed_when: false
   ignore_errors: yes
 
+
 - name: Set scoreboard file status
   ansible.builtin.set_fact:
-    scoreboard_file_status: "{{ 'not_specified' if scoreboard_file_check.rc != 0 else 'specified' }}"
+    scoreboard_file_status: "{{ 'not specified' if scoreboard_file_check.rc != 0 else 'specified' }}"
+
 
 - name: Find the ScoreBoardFile directory
   ansible.builtin.shell: "dirname $(grep -r 'ScoreBoardFile' {{ apache_conf_dir }}/conf/*.conf | awk '{print $2}') || echo {{ apache_bin_dir }}/logs"
@@ -16,6 +25,7 @@
   ignore_errors: yes
   when: scoreboard_file_status == 'specified'
 
+
 - name: Verify that the ScoreBoardFile directory is not in DocumentRoot
   ansible.builtin.shell: "grep 'DocumentRoot' {{ apache_conf_dir }}/conf/httpd.conf | awk '{print $2}'"
   register: document_root
@@ -23,10 +33,13 @@
   ignore_errors: yes
   when: scoreboard_file_status == 'specified'
 
+
 - name: Check if ScoreBoardFile directory is within DocumentRoot
   ansible.builtin.set_fact:
     is_in_document_root: "{{ scoreboard_file_directory.stdout | search(document_root.stdout) }}"
+  ignore_errors: yes
   when: scoreboard_file_status == 'specified'
+
 
 - name: Verify ownership and group of the ScoreBoardFile directory
   ansible.builtin.stat:
@@ -36,10 +49,13 @@
   ignore_errors: yes
   when: scoreboard_file_status == 'specified'
 
+
 - name: Check that ScoreBoardFile directory is owned by root:root
   ansible.builtin.set_fact:
     ownership_status: "{{ 'compliant' if scoreboard_directory_stat.stat.pw_name == 'root' and scoreboard_directory_stat.stat.gr_name == 'root' else 'non_compliant' }}"
+  ignore_errors: yes
   when: scoreboard_file_status == 'specified'
+
 
 - name: Check if the ScoreBoardFile directory is on a locally mounted filesystem
   ansible.builtin.command: "df -T {{ scoreboard_file_directory.stdout }} | awk 'NR==2 {print $2}'"
@@ -48,14 +64,19 @@
   ignore_errors: yes
   when: scoreboard_file_status == 'specified'
 
+
 - name: Set filesystem compliance
   ansible.builtin.set_fact:
     filesystem_compliance: "{{ 'compliant' if scoreboard_filesystem_type.stdout != 'nfs' else 'non_compliant' }}"
+  ignore_errors: yes
   when: scoreboard_file_status == 'specified'
+
 
 - name: Determine overall compliance status
   ansible.builtin.set_fact:
-    overall_compliance: "{{ 'compliant' if scoreboard_file_status == 'not_specified' or (ownership_status == 'compliant' and filesystem_compliance == 'compliant' and not is_in_document_root) else 'non_compliant' }}"
+    overall_compliance: "{{ 'compliant' if scoreboard_file_status == 'not specified' or (ownership_status == 'compliant' and filesystem_compliance == 'compliant' and not is_in_document_root) else 'non_compliant' }}"
+  ignore_errors: yes
+
 
 - name: Append ScoreBoardFile compliance status to CSV file
   ansible.builtin.lineinfile:
@@ -64,7 +85,3 @@
     line: "{{ inventory_hostname }},3.10,scoreboard_file,{{ overall_compliance | trim }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display ScoreBoardFile compliance status
-  ansible.builtin.debug:
-    msg: "ScoreBoardFile compliance is {{ overall_compliance }} on {{ inventory_hostname }}"
