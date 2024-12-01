@@ -1,3 +1,8 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    ssl_insecure_renegotiation_status: "not compliant"
+
+
 - name: Verify the SSLInsecureRenegotiation off directive in Apache configuration
   ansible.builtin.shell: |
     grep -i "SSLInsecureRenegotiation\s+off$" {{ apache_conf_dir }}/conf/httpd.conf
@@ -21,6 +26,7 @@
       {% else %}
         not compliant
       {% endif %}
+  ignore_errors: yes
 
 - name: Record compliance status for SSLInsecureRenegotiation directive
   ansible.builtin.lineinfile:
