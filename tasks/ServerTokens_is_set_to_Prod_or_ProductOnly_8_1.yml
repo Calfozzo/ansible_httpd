@@ -1,12 +1,20 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    server_tokens_status: "not compliant"
+
+
 - name: Search for the ServerTokens directive in Apache configuration files
   ansible.builtin.shell: |
     grep -i "ServerTokens\s+Prod$" {{ apache_conf_dir }}/conf/httpd.conf
   register: server_tokens_check
   ignore_errors: yes
 
+
 - name: Set compliance status for ServerTokens directive
   ansible.builtin.set_fact:
     server_tokens_status: "{{ 'compliant' if server_tokens_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: yes
+
 
 - name: Record compliance status for ServerTokens directive
   ansible.builtin.lineinfile:
