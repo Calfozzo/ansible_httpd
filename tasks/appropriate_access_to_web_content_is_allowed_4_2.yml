@@ -1,10 +1,18 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    directory_compliance_status: "not compliant"
+    order_deny_allow_status: "not compliant"
+    require_method_status: "not compliant"
+    overall_status: "not compliant"
+
+
 - name: Extract all <Directory> elements from Apache configuration files
   ansible.builtin.shell: |
     perl -ne 'print if /^ *<Directory */i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: directory_elements
   changed_when: false
   ignore_errors: yes
+
 
 - name: Extract all <Location> elements from Apache configuration files
   ansible.builtin.shell: |
@@ -13,6 +21,7 @@
   changed_when: false
   ignore_errors: yes
 
+
 - name: Extract Allow directives from Apache configuration files
   ansible.builtin.shell: |
     grep -i -C 6 'Allow[[:space:]]from' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
@@ -20,14 +29,17 @@
   changed_when: false
   ignore_errors: yes
 
+
 - name: Set directory compliance status based on extracted elements
   ansible.builtin.set_fact:
     directory_compliance_status: >-
       {%- if directory_elements.stdout | length > 0 -%}
         compliant
       {%- else -%}
-        not_compliant
+        not compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Check for Order/Deny/Allow method in <Directory> elements
   ansible.builtin.shell: |
@@ -36,6 +48,7 @@
   changed_when: false
   ignore_errors: yes
 
+
 - name: Validate Order/Deny/Allow configuration
   ansible.builtin.set_fact:
     order_deny_allow_status: >-
@@ -43,8 +56,10 @@
               'Deny from' in order_deny_allow_output.stdout -%}
         compliant
       {%- else -%}
-        not_compliant
+        not compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Check for Require directives in <Directory> elements
   ansible.builtin.shell: |
@@ -53,6 +68,7 @@
   changed_when: false
   ignore_errors: yes
 
+
 - name: Validate Require method configuration
   ansible.builtin.set_fact:
     require_method_status: >-
@@ -60,8 +76,10 @@
               not ('Order' in order_deny_allow_output.stdout or 'Deny' in order_deny_allow_output.stdout) -%}
         compliant
       {%- else -%}
-        not_compliant
+        not compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Determine overall compliance status
   ansible.builtin.set_fact:
@@ -71,8 +89,9 @@
               directory_compliance_status == 'compliant' -%}
         compliant
       {%- else -%}
-        not_compliant
+        not compliant
       {%- endif -%}
+  ignore_errors: yes
 
       
 - name: Append directory configuration compliance status to CSV file
@@ -82,6 +101,4 @@
     line: "{{ inventory_hostname }},4.2,directory_configuration,{{ overall_status }}"
   delegate_to: localhost
 
-- name: Display compliance status for <Directory> elements
-  ansible.builtin.debug:
-    msg: "Directory compliance status: {{ directory_compliance_status }}, Order/Deny/Allow status: {{ order_deny_allow_status }}, Require method status: {{ require_method_status }} on {{ inventory_hostname }}"
+  
