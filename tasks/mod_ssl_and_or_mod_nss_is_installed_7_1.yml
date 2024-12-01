@@ -1,3 +1,8 @@
+- name: Set Default
+  set_fact:
+    ssl_nss_status: "not compliant"
+
+
 - name: Verify that mod_ssl or mod_nss is loaded in the Apache configuration
   shell: |
     # Check if either mod_ssl or mod_nss is loaded
@@ -5,9 +10,12 @@
   register: ssl_nss_check
   ignore_errors: yes
 
+
 - name: Set compliance status for SSL/NSS modules
   set_fact:
-    ssl_nss_status: "{{ 'compliant' if ssl_nss_check.stdout else 'non-compliant' }}"
+    ssl_nss_status: "{{ 'compliant' if ssl_nss_check.stdout else 'not compliant' }}"
+  ignore_errors: yes
+
 
 - name: Record compliance status for SSL/NSS modules
   lineinfile:
