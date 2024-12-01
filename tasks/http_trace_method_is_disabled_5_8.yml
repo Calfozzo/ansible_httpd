@@ -1,13 +1,22 @@
+- name: Set Default
+  ansiblle.builtin.set_fact:
+    trace_enable_status: "not compliant"
+
+
 - name: Check for TraceEnable directive
   ansible.builtin.command: >-
     grep -i '^TraceEnable\s\+off$' {{ apache_conf_dir }}/conf/httpd.conf
   register: trace_enable_check
   changed_when: false
   failed_when: false
+  ignore_errors: true
+
 
 - name: Set compliance status for TraceEnable
   ansible.builtin.set_fact:
-    trace_enable_status: "{{ 'compliant' if trace_enable_check.rc == 0 else 'not_compliant' }}"
+    trace_enable_status: "{{ 'compliant' if trace_enable_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
