@@ -1,4 +1,10 @@
----
+- name: Set Default 
+  ansible.builtin.set_fact:
+    lock_file_directory: ""
+    lock_directory_stat: ""
+    lock_directory_validation: ""
+    mutex_validation_status: "not compliant"
+
 - name: Check if Mutex directive is configured with fcntl, flock, or file
   ansible.builtin.shell: "grep -R 'Mutex' {{ apache_conf_dir }}/conf/*.conf"
   register: mutex_check
@@ -18,20 +24,17 @@
 - name: Determine the lock file directory if Mutex is set
   ansible.builtin.set_fact:
     lock_file_directory: "{{ mutex_check.stdout | regex_search('Mutex\\s+(\\w+)\\s+(.*)') | first | default('') | trim }}"
+  ignore_errors: true
   when: mutex_check.stdout != ""
-
-
-- name: Set lock_file_directory to empty if mutex_check is empty
-  ansible.builtin.set_fact:
-    lock_file_directory: ""
-  when: mutex_check.stdout == ""
 
 
 - name: Check if lock file directory exists
   ansible.builtin.stat:
     path: "{{ lock_file_directory }}"
   register: lock_directory_stat
+  ignore_errors: true
   when: lock_file_directory != ""
+
 
 - name: Validate lock file directory conditions
   ansible.builtin.shell: |
@@ -60,10 +63,6 @@
   ignore_errors: true 
   when: lock_file_directory != ""
 
-- name: Set lock_directory_validation to empty if lock_file_directory is empty
-  ansible.builtin.set_fact:
-    lock_directory_validation: ""
-  when: lock_file_directory == ""
 
 - name: Set fact for Mutex validation result
   ansible.builtin.set_fact:
@@ -81,6 +80,7 @@
       {%- else -%}
         compliant
       {%- endif -%}
+  ignore_errors: true
   when: lock_directory_validation != ""
 
 - name: Set fact for Mutex validation result when lock_directory_validation is empty
@@ -95,7 +95,3 @@
     line: "{{ inventory_hostname }},3.8,mutex_validation,{{ mutex_validation_status | trim }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display Mutex validation result
-  ansible.builtin.debug:
-    msg: "Mutex validation status is {{ mutex_validation_status }} on {{ inventory_hostname }}"

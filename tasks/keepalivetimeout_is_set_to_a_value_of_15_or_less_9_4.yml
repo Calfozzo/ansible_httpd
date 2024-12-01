@@ -1,7 +1,13 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    compliance_status: "not compliant"
+
+
 - name: Check KeepAliveTimeout directive in the httpd.conf file
   ansible.builtin.command: grep -i "KeepAliveTimeout\\s+15$" {{ apache_conf_dir }}/conf/httpd.conf
   register: keep_alive_timeout_check
   ignore_errors: yes
+
 
 - name: Prepare compliance status for KeepAliveTimeout
   ansible.builtin.set_fact:
@@ -11,6 +17,8 @@
       {% else %}
         not compliant
       {% endif %}
+  ignore_errors: yes
+
 
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
