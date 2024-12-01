@@ -1,3 +1,7 @@
+- name: Set Default
+  set_fact:
+    ssl_compression_status: "not compliant"
+
 
 - name: Search for the SSLCompression directive in Apache configuration
   shell: |
@@ -5,15 +9,19 @@
   register: ssl_compression_check
   ignore_errors: yes
 
+
 - name: Search for the SSLCompression directive in Apache configuration
   shell: |
     grep -i "SSLCompression\s+off$" {{ apache_conf_dir }}
   register: ssl_compression_off_check
   ignore_errors: yes
 
+
 - name: Set compliance status for SSLCompression directive
   set_fact:
     ssl_compression_status: "{{ 'compliant' if ssl_compression_check.rc == 1 or ssl_compression_off_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: yes
+
 
 - name: Record compliance status for SSLCompression directive
   lineinfile:
