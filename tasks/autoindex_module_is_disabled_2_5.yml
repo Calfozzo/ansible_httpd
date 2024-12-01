@@ -1,4 +1,8 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    autoindex_status: "not compliant"
+
+
 - name: Check if autoindex module is enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep autoindex"
   register: autoindex_check
@@ -6,9 +10,12 @@
   changed_when: false
   ignore_errors: true
 
+
 - name: Determine autoindex status
   ansible.builtin.set_fact:
     autoindex_status: "{{ 'compliant' if autoindex_check.rc == 0 else 'not compliant' }}"
+  gnore_errors: true
+
 
 - name: Append autoindex status to CSV file
   ansible.builtin.lineinfile:
@@ -16,7 +23,3 @@
     create: yes
     line: "{{ inventory_hostname }},2.5,autoindex,{{ autoindex_status }}"
   delegate_to: localhost
-  
-- name: Display autoindex status
-  ansible.builtin.debug:
-    msg: "Module autoindex is {{ autoindex_status }} on {{ inventory_hostname }}"

@@ -1,10 +1,17 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    auth_basic_status: "not compliant"
+    auth_digest_status: "not compliant"
+    overall_status: "not compliant"
+    
+
 - name: Check if basic authentication module is enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep auth_basic"
   register: auth_basic_check
   failed_when: auth_basic_check.rc != 0 
   changed_when: false
   ignore_errors: true
+
 
 - name: Check if digest authentication module is enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/httpd -M | grep auth_digest"
@@ -13,10 +20,13 @@
   changed_when: false
   ignore_errors: true
 
+
 - name: Determine authentication modules status
   ansible.builtin.set_fact:
     auth_basic_status: "{{ 'compliant' if auth_basic_check.rc == 0 else 'not compliant' }}"
     auth_digest_status: "{{ 'compliant' if auth_digest_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Determine overall compliance status
   ansible.builtin.set_fact:
@@ -25,8 +35,10 @@
               auth_digest_status == 'compliant' -%}
         compliant
       {%- else -%}
-        not_compliant
-      {%- endif -%}    
+        not compliant
+      {%- endif -%}
+  ignore_errors: true
+
 
 - name: Append authentication modules status to CSV file
   ansible.builtin.lineinfile:
@@ -35,7 +47,3 @@
     line: "{{ inventory_hostname }},2.9,auth_basic,{{ overall_status }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display authentication modules status
-  ansible.builtin.debug:
-    msg: "Basic Auth module is {{ auth_basic_status }} and Digest Auth module is {{ auth_digest_status }} on {{ inventory_hostname }}"
