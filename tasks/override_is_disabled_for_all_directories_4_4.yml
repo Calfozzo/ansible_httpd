@@ -1,10 +1,17 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    allow_override_status: "not compliant"
+    allow_override_list_status: "not compliant"
+    overall_status: "not compliant"
+
+
 - name: Check for AllowOverride directives in Apache configuration files
   ansible.builtin.shell: |
     grep -i 'AllowOverride' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: allow_override_check
   changed_when: false
   ignore_errors: yes
+
 
 - name: Set AllowOverride compliance status
   ansible.builtin.set_fact:
@@ -14,6 +21,8 @@
       {%- else -%}
         not_compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Check for AllowOverrideList directives
   ansible.builtin.shell: |
@@ -21,6 +30,7 @@
   register: allow_override_list_check
   changed_when: false
   ignore_errors: yes
+
 
 - name: Set AllowOverrideList compliance status
   ansible.builtin.set_fact:
@@ -30,6 +40,8 @@
       {%- else -%}
         not_compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Determine overall compliance status
   ansible.builtin.set_fact:
@@ -40,6 +52,8 @@
       {%- else -%}
         not_compliant
       {%- endif -%}
+  ignore_errors: yes
+
 
 - name: Append AllowOverride compliance status to CSV file
   ansible.builtin.lineinfile:
@@ -48,6 +62,3 @@
     line: "{{ inventory_hostname }},4.4,allow_override,{{ overall_status | trim }}"
   delegate_to: localhost
   
-- name: Display compliance status for AllowOverride directives
-  ansible.builtin.debug:
-    msg: "AllowOverride status: {{ allow_override_status }}, AllowOverrideList status: {{ allow_override_list_status }} on {{ inventory_hostname }}"
