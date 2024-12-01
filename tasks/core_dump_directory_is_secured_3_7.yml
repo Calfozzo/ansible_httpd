@@ -1,4 +1,8 @@
----
+- name:
+  ansible.builtin.set_fact:
+    coredump_directory_status: "not set" 
+    coredump_validation_status: "not compliant"
+
 - name: Check if CoreDumpDirectory directive is set in Apache configuration files
   ansible.builtin.shell: "grep -R '^CoreDumpDirectory' {{ apache_conf_dir }}/*.conf"
   register: coredump_check
@@ -14,6 +18,7 @@
       {%- else -%}
         set
       {%- endif -%}
+  ignore_errors: true 
 
 - name: Determine if CoreDumpDirectory is correctly configured
   ansible.builtin.shell: |
@@ -57,6 +62,7 @@
       {%- else -%}
         not compliant
       {%- endif -%}
+  ignore_errors: true 
 
 - name: Append CoreDumpDirectory validation result to CSV file
   ansible.builtin.lineinfile:
