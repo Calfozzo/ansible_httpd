@@ -1,3 +1,8 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    pid_file_validation: "not compliant"
+
+
 - name: Find the PidFile path
   ansible.builtin.shell: "{{ apache_bin_dir }}/apachectl -t -D DUMP_PCONFIG | grep PidFile | awk '{print $2}'"
   register: pid_file_path
@@ -5,10 +10,12 @@
   failed_when: false
   ignore_errors: yes
 
+
 - name: Get the PidFile directory
   ansible.builtin.set_fact:
     pid_file_directory: "{{ pid_file_path.stdout | dirname }}"
   ignore_errors: yes
+
 
 - name: Check if PidFile directory is within DocumentRoot
   ansible.builtin.shell: "{{ apache_bin_dir }}/apachectl -t -D DUMP_CONFIG | grep -E 'DocumentRoot ' | awk '{print $2}'"
@@ -16,16 +23,19 @@
   changed_when: false
   ignore_errors: yes
 
+
 - name: Check if PidFile directory is outside DocumentRoot
   ansible.builtin.set_fact:
     pid_file_outside_docroot: "{{ pid_file_directory not in document_root.stdout }}"
   ignore_errors: yes
+
 
 - name: Get ownership and permissions of the PidFile directory
   ansible.builtin.stat:
     path: "{{ pid_file_directory }}"
   register: pid_file_stats
   ignore_errors: yes
+
 
 - name: Validate PidFile directory properties
   ansible.builtin.set_fact:
@@ -42,6 +52,7 @@
         compliant
       {%- endif -%}
   ignore_errors: yes
+
 
 - name: Append PidFile validation status to CSV file
   ansible.builtin.lineinfile:
