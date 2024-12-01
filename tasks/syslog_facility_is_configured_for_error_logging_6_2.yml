@@ -1,3 +1,9 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    error_log_status: "not compliant"
+    virtual_host_error_log_status: "not compliant"
+
+
 - name: Verify ErrorLog directive for syslog facility
   ansible.builtin.shell: |
     if grep -q '^ErrorLog syslog:' {{ apache_conf_dir }}/conf.d/*.conf; then
@@ -8,9 +14,12 @@
   register: error_log_check
   ignore_errors: yes
 
+
 - name: Set the error log compliance status
   ansible.builtin.set_fact:
     error_log_status: "{{ 'not compliant' if error_log_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes
+
 
 - name: Verify ErrorLog for each virtual host
   ansible.builtin.shell: |
@@ -25,9 +34,12 @@
   register: virtual_host_error_log_check
   ignore_errors: yes
 
+
 - name: Set the virtual host error log compliance status
   ansible.builtin.set_fact:
     virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
+  ignore_errors: yes 
+
 
 - name: Log compliance status to CSV
   ansible.builtin.lineinfile:
@@ -35,6 +47,7 @@
     line: "{{ inventory_hostname }},6.2,ErrorLog Check,{{ error_log_status | trim }}"
     create: yes
   delegate_to: localhost
+
 
 - name: Log Virtual Host ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
