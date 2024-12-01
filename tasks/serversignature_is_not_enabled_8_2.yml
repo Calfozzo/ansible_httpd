@@ -1,19 +1,19 @@
----
+- name: Set Default 
+  ansible.builtin.set_fact:
+    server_signature_status: "not compliant"
+
+
 - name: "Check ServerSignature directive in Apache configuration"
   ansible.builtin.command: "grep -i 'ServerSignature  Off$' {{ apache_conf_dir }}/conf/httpd.conf"
   register: server_signature_check
   ignore_errors: yes
 
 
-- name: Set default ServerSignature compliance status
-  ansible.builtin.set_fact:
-    server_signature_status: "not_compliant"
-  when: serversignature_check is not defined
-
 - name: "Set ServerSignature compliance status"
   ansible.builtin.set_fact:
     server_signature_status: "{{ 'compliant' if server_signature_status.rc == 0 else 'not compliant' }}"
-  when: serversignature_check is defined
+  ignore_errors: yes
+
 
 - name: "ServerSignature compliance status to CSV"
   ansible.builtin.lineinfile:
