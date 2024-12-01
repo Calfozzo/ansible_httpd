@@ -1,35 +1,59 @@
+name: Set Default
+  ansible.builtin.set_fact:
+    order_deny_allow_status: "not compliant"
+    directory_elements: ""
+    require_method_check: false
+    order_deny_allow_check: false
+    require_method_status: "not compliant"
+    overall_compliance_status: "not compliant"
+
+
 - name: Locate Apache configuration files
   ansible.builtin.find:
     paths: "{{ apache_conf_dir }}/conf"
     patterns: "*.conf"
   register: apache_conf_files
+  ignore_errors: true
+
 
 - name: Read contents of Apache configuration files
   ansible.builtin.slurp:
     src: "{{ item.path }}"
   loop: "{{ apache_conf_files.files }}"
   register: file_contents
+  ignore_errors: true
+
 
 - name: Extract <Directory> directives
   ansible.builtin.set_fact:
     directory_elements: "{{ directory_elements | default([]) + [item.content | b64decode | regex_findall('<Directory.*?</Directory>', multiline=True)] }}"
   loop: "{{ file_contents.results }}"
+  ignore_errors: true
+
 
 - name: Check for Order/Deny/Allow method in <Directory>
   ansible.builtin.set_fact:
     order_deny_allow_check: "{{ directory_elements | select('search', 'Order\\s+deny,allow') | list | length > 0 and not (directory_elements | select('search', '<LimitExcept>') | select('search', 'GET|POST|OPTIONS') | list | length > 0) }}"
+  ignore_errors: true
+
 
 - name: Check for Require method in <Directory>
   ansible.builtin.set_fact:
     require_method_check: "{{ directory_elements | select('search', 'Require all denied') | list | length > 0 and not (directory_elements | select('search', '<Directory') | select('search', 'Allow|Deny') | list | length > 0) }}"
+  ignore_errors: true
+
 
 - name: Set compliance status for Order/Deny/Allow method
   ansible.builtin.set_fact:
     order_deny_allow_status: "{{ 'compliant' if order_deny_allow_check else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Set compliance status for Require method
   ansible.builtin.set_fact:
     require_method_status: "{{ 'compliant' if require_method_check else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Determine overall compliance status
   ansible.builtin.set_fact:
@@ -40,7 +64,9 @@
       {%- else -%}
         not compliant
       {%- endif -%}
+  ignore_errors: true
 
+  
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
