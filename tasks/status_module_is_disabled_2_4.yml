@@ -1,4 +1,8 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    sts_module_status: "not compliant"
+
+
 - name: Check if Status module is enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/apachectl -M | grep -E 'status_module'"
   register: sts_module_check
@@ -6,9 +10,12 @@
   failed_when: sts_module_check.rc != 0
   ignore_errors: true
 
+
 - name: Determine status_module status
   ansible.builtin.set_fact:
     sts_module_status: "{{ 'compliant' if sts_module_check.rc != 0 else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Append status_module status to CSV file
   ansible.builtin.lineinfile:
@@ -17,8 +24,3 @@
     line: "{{ inventory_hostname }},2.4,status_module,{{ sts_module_status }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display status_module status
-  ansible.builtin.debug:
-    msg: "status_module is {{ sts_module_status }} on {{ inventory_hostname }}"
-
