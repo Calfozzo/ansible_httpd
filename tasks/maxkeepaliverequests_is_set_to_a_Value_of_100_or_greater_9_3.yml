@@ -1,8 +1,10 @@
-
+- name: Set Default
+  ansible.builtin.set_fact:
+    max_keep_alive_requests_check
 
 - name: Ensure MaxKeepAliveRequests is set to 100 or more
   ansible.builtin.command: grep -i "^MaxKeepAliveRequests\s+100$" {{ apache_conf_dir }}/conf/httpd.conf
-  register: max_keep_alive_requests_check
+    register: max_keep_alive_requests_check
   ignore_errors: yes
 
 - name: Prepare compliance status for CSV output
