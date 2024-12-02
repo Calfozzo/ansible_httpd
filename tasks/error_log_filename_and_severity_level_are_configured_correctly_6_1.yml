@@ -71,7 +71,7 @@
     line: "{{ inventory_hostname }},6.1,ErrorLog Check,{{ error_log_status }}"
     create: yes
     insertafter: EOF
-    delegate_to: localhost
+  delegate_to: localhost
 
 - name: Log Virtual Host ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
