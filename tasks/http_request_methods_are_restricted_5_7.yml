@@ -1,4 +1,4 @@
-name: Set Default
+- name: Set Default
   ansible.builtin.set_fact:
     order_deny_allow_status: "not compliant"
     directory_elements: ""
