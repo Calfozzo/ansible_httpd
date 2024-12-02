@@ -4,7 +4,7 @@
     coredump_validation_status: "not compliant"
 
 - name: Check if CoreDumpDirectory directive is set in Apache configuration files
-  ansible.builtin.shell: "grep -R '^CoreDumpDirectory' {{ apache_conf_dir }}/*.conf"
+  ansible.builtin.shell: "grep -R '^CoreDumpDirectory' {{ apache_conf_dir }}/conf/httpd.conf"
   register: coredump_check
   changed_when: false
   failed_when: false  
