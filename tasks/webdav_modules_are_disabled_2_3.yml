@@ -1,4 +1,8 @@
----
+- name: Set Default
+  ansible.builtin.set_fact:
+    webdav_status: "not compliant"
+
+
 - name: Check if webdav module is enabled
   ansible.builtin.shell: "{{ apache_bin_dir }}/apachectl -M | grep dav"
   register: webdav_check
@@ -9,6 +13,8 @@
 - name: Determine webdav status
   ansible.builtin.set_fact:
     webdav_status: "{{ 'compliant' if webdav_check.rc == 0 else 'not compliant' }}"
+  ignore_errors: true
+
 
 - name: Append webdav status to CSV file
   ansible.builtin.lineinfile:
@@ -17,7 +23,3 @@
     line: "{{ inventory_hostname }},2.3,webdav,{{ webdav_status | trim }}"
     insertafter: EOF
   delegate_to: localhost
-  
-- name: Display webdav status
-  ansible.builtin.debug:
-    msg: "WebDAV module is {{ webdav_status }} on {{ inventory_hostname }}"
