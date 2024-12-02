@@ -79,4 +79,4 @@
     line: "{{ inventory_hostname }},6.1,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status }}"
     create: yes
     insertafter: EOF
-    delegate_to: localhost
+  delegate_to: localhost
