@@ -1,14 +1,22 @@
+- name: Set Default
+  ansible.builtin.set_fact:
+    timeout_status: "not compliant"
+
+
 - name: Locate Apache configuration files including conf.d directory
   ansible.builtin.find:
     paths: "{{ apache_conf_dir }}/conf.d"
     patterns: "*.conf"
   register: apache_config_files
+  ignore_errors: yes
+  
 
 - name: Check RequestReadTimeout directives in Apache configuration
   ansible.builtin.command: grep -Ei '^\s*RequestReadTimeout\s+header=(20|[2-3][0-9]|40)-40,MinRate=500\s+body=(20|[2-3][0-9]|40),MinRate=500' {{ item.path }}
   register: request_read_timeout_check
   loop: "{{ apache_config_files.files }}"
   ignore_errors: yes
+
 
 - name: Determine compliance status for RequestReadTimeout
   ansible.builtin.set_fact:
@@ -18,8 +26,10 @@
       {% elif request_read_timeout_check.results | default([]) %}
         compliant
       {% else %}
-        not_compliant
+        not compliant
       {% endif %}
+  ignore_errors: yes
+
 
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
