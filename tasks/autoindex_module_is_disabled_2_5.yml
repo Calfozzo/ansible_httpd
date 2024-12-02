@@ -14,7 +14,7 @@
 - name: Determine autoindex status
   ansible.builtin.set_fact:
     autoindex_status: "{{ 'compliant' if autoindex_check.rc == 0 else 'not compliant' }}"
-  gnore_errors: true
+  ignore_errors: true
 
 
 - name: Append autoindex status to CSV file
