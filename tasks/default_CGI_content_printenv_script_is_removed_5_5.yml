@@ -17,9 +17,15 @@
   ignore_errors: yes
 
 
+- name: Join cgi-bin directories with spaces
+  ansible.builtin.set_fact:
+    joined_cgi_bin_dirs: "{{ cgi_bin_dirs | join(' ') }}"  
+  ignore_errors: yes
+
+
 - name: Check if printenv CGI is installed in cgi-bin directories
   ansible.builtin.shell: |
-    for dir in {{ cgi_bin_dirs | join(' ') }}; do
+    for dir in {{ joined_cgi_bin_dirs }}; do
       if [ -d "$dir" ]; then
         find "$dir" -name "printenv" -type f && exit 0
       fi
