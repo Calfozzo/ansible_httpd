@@ -1,6 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
-    apache_lock_status: "not compliant"
+    apache_lock_status: "check failed"
 
 
 - name: Check if Apache account is locked
@@ -9,6 +9,13 @@
   changed_when: false
   failed_when: apache_account_status.rc != 0  
   ignore_errors: true  
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ apache_account_status.stderr }}"
+  when: apache_account_status.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine Apache account lock status
@@ -21,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }}, 3.3, Apache User Account Is Locked ,{{ apache_lock_status }}"
+    line: "{{ inventory_hostname }}, 3.3, Apache User Account Is Locked ,{{ apache_lock_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost

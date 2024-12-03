@@ -33,6 +33,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.2,apache_login_shell,{{ apache_shell_status }},{{ error_desc }}"
+    line: "{{ inventory_hostname }},3.2,apache_login_shell,{{ apache_shell_status }},{{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
