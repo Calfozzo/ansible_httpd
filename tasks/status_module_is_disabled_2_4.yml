@@ -1,5 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
+    error_desc: ""
     sts_module_status: "check failed"
 
 

@@ -1,5 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
+    error_desc: ""
     apache_user: "check failed"
     apache_user_status: "check failed"
 

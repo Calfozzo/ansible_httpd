@@ -1,5 +1,6 @@
 - name: Set Default status 
   ansible.builtin.set_fact:
+    error_desc: ""
     test_cgi_status: "check failed"
 
 

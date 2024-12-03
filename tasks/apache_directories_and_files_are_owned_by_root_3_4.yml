@@ -1,5 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
+    error_desc: ""
     non_root_files_status: "not compliant"
 
 - name: Identify files in the Apache directory not owned by root

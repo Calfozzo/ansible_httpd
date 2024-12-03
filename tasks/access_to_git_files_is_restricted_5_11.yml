@@ -1,5 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
+    error_desc: ""
     directory_match_status: "check failed"
 
 - name: Verify the presence of DirectoryMatch directive for .git

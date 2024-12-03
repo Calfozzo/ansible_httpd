@@ -1,5 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
+    error_desc: ""
     root_directory_status: "check failed"
     require_method_status: "check failed"
     order_deny_allow_status: "check failed"

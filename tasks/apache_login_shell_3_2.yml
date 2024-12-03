@@ -1,5 +1,6 @@
 - name: Set default apache_shell_status
   ansible.builtin.set_fact:
+    error_desc: ""
     apache_shell: ""
     apache_shell_status: "check failed"
 

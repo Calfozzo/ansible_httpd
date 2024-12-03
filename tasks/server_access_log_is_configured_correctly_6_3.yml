@@ -1,5 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
+    error_desc: ""
     error_desc_custom_log: ""
     error_desc_log_format: ""
     custom_log_status: "check failed"

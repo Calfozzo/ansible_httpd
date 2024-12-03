@@ -1,5 +1,6 @@
 - name: Set Default 
   ansible.builtin.set_fact:
+    error_desc: ""
     lock_file_directory: ""
     lock_directory_stat: ""
     lock_directory_validation: ""

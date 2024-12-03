@@ -1,5 +1,6 @@
 - name: Set Default
   set_fact:
+    error_desc: ""
     ssl_protocol_status: "check failed"
 
 

@@ -1,5 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
+    error_desc: ""
     scoreboard_file_status: "not specified"
     ownership_status: "check failed"
     filesystem_compliance: "check failed"

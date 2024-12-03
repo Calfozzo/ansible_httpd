@@ -1,5 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
+    error_desc: ""
     error_desc_log_level: ""
     error_desc_log_error: ""
     error_desc_virtual_host: ""

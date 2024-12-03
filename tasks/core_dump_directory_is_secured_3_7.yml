@@ -1,5 +1,6 @@
 - name:
   ansible.builtin.set_fact:
+    error_desc: ""
     coredump_directory_status: "not set" 
     coredump_validation_status: "not compliant"
 

@@ -1,5 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
+    error_desc: ""
     order_deny_allow_status: "check failed"
     directory_elements: ""
     require_method_check: false

@@ -1,5 +1,6 @@
 - name:
   ansible.builtin.set_fact:
+    error_desc: ""
     non_root_group_files_status: "check failed"
 
 

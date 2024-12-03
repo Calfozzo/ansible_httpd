@@ -1,5 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
+    error_desc: ""
     apache_lock_status: "check failed"
 
 
