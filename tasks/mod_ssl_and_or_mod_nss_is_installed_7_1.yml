@@ -5,7 +5,7 @@
 
 - name: Verify that mod_ssl or mod_nss is loaded in the Apache configuration
   shell: |
-    {{ apache_bin_dir }}/httpd -M | egrep 'ssl_module|nss_module'
+    {{ apache_bin_dir }}/httpd -M | grep -E 'ssl_module|nss_module'
   register: ssl_nss_check
   ignore_errors: yes
 

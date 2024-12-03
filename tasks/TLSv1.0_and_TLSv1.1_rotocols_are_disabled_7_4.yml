@@ -5,7 +5,7 @@
 
 - name: Verify the SSLProtocol directive is configured correctly in Apache
   shell: |
-    grep -i "SSLProtocol" {{ apache_conf_dir }}/conf/httpd.conf | egrep 'TLSv1\.2|TLSv1\.3'
+    grep -i "SSLProtocol" {{ apache_conf_dir }}/conf/httpd.conf | grep -E 'TLSv1\.2|TLSv1\.3'
   register: ssl_protocol_check
   ignore_errors: yes
 
