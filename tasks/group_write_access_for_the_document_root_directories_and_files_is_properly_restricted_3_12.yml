@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    group_write_access_status: "not compliant"
+    group_write_access_status: "check failed"
 
 
 - name: Get the Apache group from the configuration
@@ -8,6 +8,14 @@
   register: apache_group
   changed_when: false
   ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ apache_group.stderr }}"
+  when: apache_group.rc != 0
+  ignore_errors: yes
+
 
 - name: Identify files or directories in the Document Root with Apache group write access
   ansible.builtin.shell: "find -L /var/www/html -group {{ apache_group.stdout }} -perm /g=w -ls"
@@ -24,6 +32,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.12,docroot_group_write_access,{{ group_write_access_status }}"
+    line: "{{ inventory_hostname }},3.12,docroot_group_write_access,{{ group_write_access_status }}, {{ error_desc | trim }}"
   delegate_to: localhost
   
