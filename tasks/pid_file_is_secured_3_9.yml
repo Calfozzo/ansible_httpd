@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    pid_file_validation: "not compliant"
+    pid_file_validation: "check failed"
 
 
 - name: Find the PidFile path
@@ -8,6 +8,13 @@
   register: pid_file_path
   changed_when: false
   failed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ pid_file_path.stderr }}"
+  when: pid_file_path.rc != 0
   ignore_errors: yes
 
 
@@ -58,5 +65,5 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.9,pid_file_validation,{{ pid_file_validation | default('not compliant') | trim }}"
+    line: "{{ inventory_hostname }},3.9,pid_file_validation,{{ pid_file_validation | default('not compliant') | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost  
