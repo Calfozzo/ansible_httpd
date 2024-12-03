@@ -4,11 +4,8 @@
 
 
 - name: Check if printenv CGI is installed in cgi-bin directory
-  ansible.builtin.shell: |
-    if [ -d "/var/www/cgi-bin/" ]; then
-      find "/var/www/cgi-bin/" -name "printenv" -type f && exit 0
-    fi
-    exit 1
+  ansible.builtin.command:
+    cmd: find /var/www/cgi-bin/ -name "printenv" -type f
   register: printenv_check
   changed_when: false
   ignore_errors: yes
@@ -16,12 +13,7 @@
 
 - name: Set cgi-bin compliance status
   ansible.builtin.set_fact:
-    cgi_status: >-
-      {%- if printenv_check.rc == 0 -%}
-        not compliant
-      {%- else -%}
-        compliant
-      {%- endif -%}
+    cgi_status: "{{ 'compliant' if printenv_check.rc != 0 or printenv_check.stdout == '' else 'not compliant' }}"
   ignore_errors: yes
 
 
