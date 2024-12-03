@@ -1,8 +1,8 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    allow_override_status: "not compliant"
-    allow_override_list_status: "not compliant"
-    overall_status: "not compliant"
+    allow_override_status: "check failed"
+    allow_override_list_status: "check failed"
+    overall_status: "check failed"
 
 
 - name: Check for AllowOverride directives in Apache configuration files
@@ -10,6 +10,13 @@
     grep -i 'AllowOverride' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: allow_override_check
   changed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ allow_override_check.stderr }}"
+  when: allow_override_check.rc != 0
   ignore_errors: yes
 
 
@@ -59,6 +66,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},4.4,allow_override,{{ overall_status | trim }}"
+    line: "{{ inventory_hostname }},4.4,allow_override,{{ overall_status | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost
   
