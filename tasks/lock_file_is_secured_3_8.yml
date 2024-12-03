@@ -6,7 +6,7 @@
     mutex_validation_status: "check failed"
 
 - name: Check if Mutex directive is configured with fcntl, flock, or file
-  ansible.builtin.shell: "grep -R 'Mutex' {{ apache_conf_dir }}/conf/*.conf"
+  ansible.builtin.shell: "grep -R 'Mutex' {{ apache_conf_dir }}/conf/httpd.conf"
   register: mutex_check
   changed_when: false
   failed_when: false 
@@ -93,7 +93,7 @@
 - name: Set fact for Mutex validation result when lock_directory_validation is empty
   ansible.builtin.set_fact:
     mutex_validation_status: compliant
-  when: lock_directory_validation == ""
+  when: lock_directory_validation == "" or not lock_directory_validation
 
 - name: Append Mutex validation result to CSV file
   ansible.builtin.lineinfile:
