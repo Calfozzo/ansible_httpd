@@ -10,6 +10,12 @@
   changed_when: false
   ignore_errors: true
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ autoindex_check.stderr }}"
+  when: autoindex_check.rc != 0
+  ignore_errors: yes
+
 
 - name: Determine autoindex status
   ansible.builtin.set_fact:
@@ -21,5 +27,5 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.5,autoindex,{{ autoindex_status }}"
+    line: "{{ inventory_hostname }},2.5,autoindex,{{ autoindex_status }} {{ error_desc | trim }}"
   delegate_to: localhost
