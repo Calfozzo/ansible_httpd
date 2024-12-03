@@ -93,7 +93,7 @@
 - name: Set fact for Mutex validation result when lock_directory_validation is empty
   ansible.builtin.set_fact:
     mutex_validation_status: compliant
-  when: lock_directory_validation == "" or not lock_directory_validation
+  when: lock_file_directory == ""
 
 - name: Append Mutex validation result to CSV file
   ansible.builtin.lineinfile:
