@@ -1,7 +1,9 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    custom_log_status: "not compliant"
-    log_format_status: "not compliant"
+    error_desc_custom_log: ""
+    error_desc_log_format: ""
+    custom_log_status: "check failed"
+    log_format_status: "check failed"
 
 
 - name: Check for CustomLog directives in configuration files
@@ -9,12 +11,22 @@
   register: custom_log_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_custom_log: "{{ custom_log_check.stderr }}"
+  when: custom_log_check.rc != 0
+  ignore_errors: yes
 
-- name: Check for CustomLog directives in configuration files
+- name: Check for LogFormat directives in configuration files
   ansible.builtin.command: grep -i '^LogFormat' {{ apache_conf_dir }}/conf/httpd.conf
   register: log_format_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_log_format: "{{ log_format_check.stderr }}"
+  when: log_format_check.rc != 0
+  ignore_errors: yes
 
 - name: Set CustomLog status based on compliance
   ansible.builtin.set_fact:
@@ -31,7 +43,7 @@
 - name: Generate CSV result
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.3,server access log,{{ custom_log_status | trim }}"
+    line: "{{ inventory_hostname }},6.3,server access log,{{ custom_log_status | trim }}, {{ error_desc_custom_log | trim }}"
     create: yes
     state: present
   delegate_to: localhost
@@ -40,7 +52,7 @@
 - name: Generate CSV result
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.3,server access log,{{ log_format_status | trim }}"
+    line: "{{ inventory_hostname }},6.3,server access log,{{ log_format_status | trim }}, {{ error_desc_log_format | trim }}"
     create: yes
     state: present
   delegate_to: localhost
