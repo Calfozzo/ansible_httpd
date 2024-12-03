@@ -1,6 +1,6 @@
 - name:
   ansible.builtin.set_fact:
-    non_root_group_files_status: "not compliant"
+    non_root_group_files_status: "check failed"
 
 
 - name: Identify files in Apache directories other than htdocs with a group other than root
@@ -9,6 +9,13 @@
   changed_when: false
   failed_when: non_root_group_files_check.rc != 0
   ignore_errors: true  
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ non_root_group_files_check.stderr }}"
+  when: non_root_group_files_check.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine if non-root group files exist
@@ -21,7 +28,7 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.5, Group Is Set Correctly on Apache Directories and Files,{{ non_root_group_files_status }}"
+    line: "{{ inventory_hostname }},3.5, Group Is Set Correctly on Apache Directories and Files,{{ non_root_group_files_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
   

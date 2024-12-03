@@ -1,12 +1,18 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    group_write_access_status: "not compliant"
+    group_write_access_status: "check failed"
 
 
 - name: Find files or directories with group write access
   ansible.builtin.shell: "find {{ apache_bin_dir }} ! -type l -perm /g=w -ls"
   register: group_write_access_files
   changed_when: false
+  ignore_errors: yes
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ group_write_access_files.stderr }}"
+  when: group_write_access_files.rc != 0
   ignore_errors: yes
 
 - name: Set the status of group write access check
@@ -18,6 +24,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.11,group_write_access,{{ group_write_access_status }}"
+    line: "{{ inventory_hostname }},3.11,group_write_access,{{ group_write_access_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
