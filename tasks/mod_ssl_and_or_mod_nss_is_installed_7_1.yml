@@ -1,15 +1,20 @@
 - name: Set Default
   set_fact:
-    ssl_nss_status: "not compliant"
+    ssl_nss_status: "check failed"
 
 
 - name: Verify that mod_ssl or mod_nss is loaded in the Apache configuration
   shell: |
-    # Check if either mod_ssl or mod_nss is loaded
     {{ apache_bin_dir }}/httpd -M | egrep 'ssl_module|nss_module'
   register: ssl_nss_check
   ignore_errors: yes
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ ssl_nss_check.stderr }}"
+  when: ssl_nss_check.rc != 0
+  ignore_errors: yes
 
 - name: Set compliance status for SSL/NSS modules
   set_fact:
@@ -20,6 +25,6 @@
 - name: Record compliance status for SSL/NSS modules
   lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},7.1,ssl_nss_module_status,{{ ssl_nss_status }}"
+    line: "{{ inventory_hostname }},7.1,ssl_nss_module_status,{{ ssl_nss_status }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
