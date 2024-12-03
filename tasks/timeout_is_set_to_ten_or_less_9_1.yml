@@ -1,14 +1,19 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    timeout_status: "not compliant"
+    timeout_status: "check failed"
 
 
 - name: "Check Timeout directive in Apache configuration"
   ansible.builtin.command: >-
-    grep -i 'Timeout\s+100$' {{ apache_conf_dir }}/conf/httpd.conf
+    grep -i 'Timeout 100' {{ apache_conf_dir }}/conf/httpd.conf
   register: timeout_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ timeout_check.stderr }}"
+  when: timeout_check.rc != 0
+  ignore_errors: yes
 
 - name: Set Timeout compliance status
   ansible.builtin.set_fact:
@@ -19,6 +24,6 @@
 - name: "Log Timeout compliance status to CSV"
   lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},9.1,Timeout,{{ timeout_status | trim }}"
+    line: "{{ inventory_hostname }},9.1,Timeout,{{ timeout_status | trim }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
