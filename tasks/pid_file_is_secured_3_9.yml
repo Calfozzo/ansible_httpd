@@ -54,7 +54,7 @@
         in_document_root
       {%- elif pid_file_stats.stat.pw_name != 'root' or pid_file_stats.stat.gr_name != 'root' -%}
         not compliant
-      {%- elif pid_file_stats.stat.mode | int('0o777') & int('0o022') != 0 -%}
+      {%- elif (pid_file_stats.stat.mode | int('0o777')) % 64 != 0 -%}
         not compliant
       {%- else -%}
         compliant
