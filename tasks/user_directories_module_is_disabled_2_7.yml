@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    userdir_status: "not compliant"
+    userdir_status: "check failed"
 
 
 - name: Check if User Directories module is enabled
@@ -9,6 +9,13 @@
   failed_when: userdir_check.rc != 0 
   changed_when: false
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ userdir_check.stderr }}"
+  when: userdir_check.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine User Directories module status
@@ -21,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.7,userdir,{{ userdir_status | trim }}" 
+    line: "{{ inventory_hostname }},2.7,userdir,{{ userdir_status | trim }}, {{ error_desc | trim }}" 
     insertafter: EOF
   delegate_to: localhost
