@@ -1,8 +1,8 @@
 - name: Set Default
   ansible.builtin.set_fact: 
-    allow_override_status: "not compliant"
-    allow_override_list_status: "not compliant"
-    overall_status: "not compliant"
+    allow_override_status: "check failed"
+    allow_override_list_status: "check failed"
+    overall_status: "check failed"
 
 
 - name: Extract root <Directory> element from Apache configuration files
@@ -11,6 +11,14 @@
   register: directory_element
   changed_when: false
   ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_element.stderr }}"
+  when: directory_element.rc != 0
+  ignore_errors: yes
+
 
 - name: Set AllowOverride compliance status
   ansible.builtin.set_fact:
@@ -57,5 +65,5 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},4.3,allow_override,{{ overall_status | trim }}"
+    line: "{{ inventory_hostname }},4.3,allow_override,{{ overall_status | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost
