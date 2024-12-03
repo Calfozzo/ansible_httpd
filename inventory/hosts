@@ -4,7 +4,7 @@ localhost ansible_connection=local
 [LOCAL:vars]
 
 apache_conf_dir=/etc/httpd
-apache_bin_dir=/usr/sbin/httpd
+apache_bin_dir=/usr/sbin/
 
 # [RHEL7]
 # your_rhel7_host ansible_host=xx.xx.xx.xx
