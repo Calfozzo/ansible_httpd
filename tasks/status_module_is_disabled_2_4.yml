@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    sts_module_status: "not compliant"
+    sts_module_status: "check failed"
 
 
 - name: Check if Status module is enabled
@@ -9,6 +9,13 @@
   changed_when: false
   failed_when: sts_module_check.rc != 0
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ sts_module_check.stderr }}"
+  when: sts_module_check.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine status_module status
@@ -21,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.4,status_module,{{ sts_module_status }}"
+    line: "{{ inventory_hostname }},2.4,status_module,{{ sts_module_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
