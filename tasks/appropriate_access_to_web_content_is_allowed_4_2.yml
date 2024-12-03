@@ -1,9 +1,10 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    directory_compliance_status: "not compliant"
-    order_deny_allow_status: "not compliant"
-    require_method_status: "not compliant"
-    overall_status: "not compliant"
+    directory_compliance_status: "check failed"
+    order_deny_allow_status: "check failed"
+    require_method_status: "check failed"
+    overall_status: "check failed"
+    error_desc: ""
 
 
 - name: Extract all <Directory> elements from Apache configuration files
@@ -11,6 +12,13 @@
     awk '/<Directory/,/<\/Directory/' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: directory_elements
   changed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_elements.stderr }}"
+  when: directory_elements.rc != 0
   ignore_errors: yes
 
 
@@ -22,6 +30,13 @@
   ignore_errors: yes
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ error_desc }}         {{ location_elements.stderr }}"
+  when: location_elements.rc != 0
+  ignore_errors: yes
+
+
 - name: Extract Allow directives from Apache configuration files
   ansible.builtin.shell: |
     grep -i -C 6 'Allow[[:space:]]from' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
@@ -29,6 +44,11 @@
   changed_when: false
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ error_desc }}         {{ allow_directives.stderr }}"
+  when: allow_directives.rc != 0
+  ignore_errors: yes
 
 - name: Set directory compliance status based on extracted elements
   ansible.builtin.set_fact:
@@ -98,7 +118,7 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},4.2,directory_configuration,{{ overall_status }}"
+    line: "{{ inventory_hostname }},4.2,directory_configuration,{{ overall_status }}, {{ error_desc | trim }}"
   delegate_to: localhost
 
   
