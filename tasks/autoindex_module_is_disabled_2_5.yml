@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    autoindex_status: "not compliant"
+    autoindex_status: "check failed"
 
 
 - name: Check if autoindex module is enabled
