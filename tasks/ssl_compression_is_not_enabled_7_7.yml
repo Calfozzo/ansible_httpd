@@ -19,7 +19,7 @@
 
 - name: Search for the SSLCompression directive in Apache configuration
   shell: |
-    grep -i "SSLCompression off " {{ apache_conf_dir }}
+    grep -i "SSLCompression off " {{ apache_conf_dir }}/conf/httpd.conf
   register: ssl_compression_off_check
   ignore_errors: yes
 
