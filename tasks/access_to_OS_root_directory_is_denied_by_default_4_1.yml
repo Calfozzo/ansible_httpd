@@ -1,9 +1,9 @@
 - name: Set Default status
   ansible.builtin.set_fact:
-    root_directory_status: "not compliant"
-    require_method_status: "not compliant"
-    order_deny_allow_status: "not compliant"
-    overall_status: "not compliant"
+    root_directory_status: "check failed"
+    require_method_status: "check failed"
+    order_deny_allow_status: "check failed"
+    overall_status: "check failed"
 
 
 - name: Search for root "<Directory>" element in Apache configuration files
@@ -13,6 +13,10 @@
   changed_when: false
   ignore_errors: yes
 
+- name: Set error description 
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_output.stderr }}"
+  when: directory_output.rc != 0
 
 - name: Set root_directory_status based on the presence of <Directory> element
   ansible.builtin.set_fact:
@@ -76,5 +80,5 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},4.1,root_directory_configuration,{{ overall_status }}"
+    line: "{{ inventory_hostname }},4.1,root_directory_configuration,{{ overall_status }}, {{ error_desc | trim }}"
   delegate_to: localhost
