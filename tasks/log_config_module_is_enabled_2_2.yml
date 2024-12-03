@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    log_config_status: "not compliant"
+    log_config_status: "check failed"
 
 
 - name: Check if log_config module is enabled
@@ -9,6 +9,13 @@
   failed_when: log_config_check.rc != 0 
   changed_when: false
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ log_config_check.stderr }}"
+  when: log_config_check.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine log_config status
@@ -21,7 +28,7 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.2,log_config,{{ log_config_status }}"
+    line: "{{ inventory_hostname }},2.2,log_config,{{ log_config_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
   
