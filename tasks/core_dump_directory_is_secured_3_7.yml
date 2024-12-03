@@ -10,6 +10,14 @@
   failed_when: false  
   ignore_errors: true  
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ coredump_check.stderr }}"
+  when: coredump_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Set fact for CoreDumpDirectory status
   ansible.builtin.set_fact:
     coredump_directory_status: >-
@@ -68,10 +76,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.7,coredump_directory,{{ coredump_validation_status }}"
+    line: "{{ inventory_hostname }},3.7,coredump_directory,{{ coredump_validation_status }},{{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
-
-- name: Display CoreDumpDirectory validation result
-  ansible.builtin.debug:
-    msg: "CoreDumpDirectory status is {{ coredump_validation_status }} on {{ inventory_hostname }}"
