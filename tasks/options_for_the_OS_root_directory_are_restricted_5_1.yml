@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    options_status: "not compliant"
+    options_status: "check failed"
 
 
 - name: Check for root <Directory> element in Apache configuration files
@@ -10,6 +10,11 @@
   changed_when: false
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_check.stderr }}"
+  when: directory_check.rc != 0
+  ignore_errors: yes
 
 - name: Set Options compliance status
   ansible.builtin.set_fact:
@@ -26,6 +31,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},5.1,directory_options,{{ options_status | trim }}"
+    line: "{{ inventory_hostname }},5.1,directory_options,{{ options_status | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost
   
