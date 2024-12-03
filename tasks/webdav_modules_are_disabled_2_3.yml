@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    webdav_status: "not compliant"
+    webdav_status: "check failed"
 
 
 - name: Check if webdav module is enabled
@@ -9,6 +9,14 @@
   failed_when: webdav_check.rc != 0  
   changed_when: false
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ webdav_check.stderr }}"
+  when: webdav_check.rc != 0
+  ignore_errors: yes
+
 
 - name: Determine webdav status
   ansible.builtin.set_fact:
@@ -20,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.3,webdav,{{ webdav_status | trim }}"
+    line: "{{ inventory_hostname }},2.3,webdav,{{ webdav_status | trim }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
