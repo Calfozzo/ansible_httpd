@@ -13,8 +13,8 @@
 
 - name: Verify the presence of DirectoryMatch directive for .svn
   ansible.builtin.shell: |
-    if grep -q '<DirectoryMatch "/\.svn">' {{ apache_conf_dir }}/*.conf && \
-       grep -q 'Require all denied' {{ apache_conf_dir }}/*.conf; then
+    if grep -q '<DirectoryMatch "/\.svn">' {{ apache_conf_dir }}/conf/httpd.conf && \
+       grep -q 'Require all denied' {{ apache_conf_dir }}/conf/httpd.conf; then
       echo "DirectoryMatch directive for .svn is set correctly"
     else
       echo "DirectoryMatch directive for .svn is NOT set correctly" && exit 1
