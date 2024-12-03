@@ -4,8 +4,15 @@
 
 
 - name: "Check ServerSignature directive in Apache configuration"
-  ansible.builtin.command: "grep -i 'ServerSignature  Off$' {{ apache_conf_dir }}/conf/httpd.conf"
+  ansible.builtin.command: "grep -i 'ServerSignature  Off' {{ apache_conf_dir }}/conf/httpd.conf"
   register: server_signature_check
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ server_signature_check.stderr }}"
+  when: server_signature_check.rc != 0
   ignore_errors: yes
 
 
@@ -18,7 +25,7 @@
 - name: "ServerSignature compliance status to CSV"
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},8.2,ServerSignature,{{ server_signature_status | trim }}"
+    line: "{{ inventory_hostname }},8.2,ServerSignature,{{ server_signature_status | trim }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
 
