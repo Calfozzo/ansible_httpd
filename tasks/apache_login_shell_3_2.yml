@@ -1,7 +1,7 @@
 - name: Set default apache_shell_status
   ansible.builtin.set_fact:
     apache_shell: ""
-    apache_shell_status: "not compliant"
+    apache_shell_status: "check failed"
 
 - name: Check Apache login shell
   ansible.builtin.getent:
