@@ -1,6 +1,7 @@
 - name: Set Default
   set_fact:
-    ssl_compression_status: "not compliant"
+    error_desc: ""
+    ssl_compression_status: "check failed"
 
 
 - name: Search for the SSLCompression directive in Apache configuration
@@ -10,12 +11,23 @@
   ignore_errors: yes
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ ssl_compression_check.stderr }}"
+  when: ssl_compression_check.rc != 0
+  ignore_errors: yes
+
 - name: Search for the SSLCompression directive in Apache configuration
   shell: |
-    grep -i "SSLCompression\s+off$" {{ apache_conf_dir }}
+    grep -i "SSLCompression off " {{ apache_conf_dir }}
   register: ssl_compression_off_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ error_desc }}        {{ ssl_compression_off_check.stderr }}"
+  when: ssl_compression_off_check.rc != 0
+  ignore_errors: yes
 
 - name: Set compliance status for SSLCompression directive
   set_fact:
@@ -26,6 +38,6 @@
 - name: Record compliance status for SSLCompression directive
   lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},7.7,ssl_compression_status,{{ ssl_compression_status | trim }}"
+    line: "{{ inventory_hostname }},7.7,ssl_compression_status,{{ ssl_compression_status | trim }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
