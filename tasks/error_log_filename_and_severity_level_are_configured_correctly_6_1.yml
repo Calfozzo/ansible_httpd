@@ -1,8 +1,11 @@
 - name: Set Default status
   ansible.builtin.set_fact:
-    log_level_status: "not compliant"
-    error_log_status: "not compliant"
-    virtual_host_error_log_status: "not compliant"
+    error_desc_log_level: ""
+    error_desc_log_error: ""
+    error_desc_virtual_host: ""
+    log_level_status: "check failed"
+    error_log_status: "check failed"
+    virtual_host_error_log_status: "check failed"
 
 
 - name: Verify LogLevel for core and other modules
@@ -19,6 +22,14 @@
   register: log_level_check
   ignore_errors: yes
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_log_level: "{{ log_level_check.stderr }}"
+  when: log_level_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Set the log level compliance status
   ansible.builtin.set_fact:
     log_level_status: "{{ 'not compliant' if log_level_check.rc != 0 else 'compliant' }}"
@@ -33,6 +44,14 @@
     fi
   register: error_log_check
   ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_log_error: "{{ error_log_check.stderr }}"
+  when: error_log_check.rc != 0
+  ignore_errors: yes
+
 
 - name: Set the error log compliance status
   ansible.builtin.set_fact:
@@ -52,6 +71,12 @@
   register: virtual_host_error_log_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_virtual_host: "{{ virtual_host_error_log_check.stderr }}"
+  when: virtual_host_error_log_check.rc != 0
+  ignore_errors: yes
+
 - name: Set the virtual host error log compliance status
   ansible.builtin.set_fact:
     virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
@@ -60,7 +85,7 @@
 - name: Log compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file}}"
-    line: "{{ inventory_hostname }},6.1,LogLevel Check,{{ log_level_status }}"
+    line: "{{ inventory_hostname }},6.1,LogLevel Check,{{ log_level_status }}, {{ error_desc_log_error | trim }}"
     create: yes
     insertafter: EOF
   delegate_to: localhost
@@ -68,7 +93,7 @@
 - name: Log ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.1,ErrorLog Check,{{ error_log_status }}"
+    line: "{{ inventory_hostname }},6.1,ErrorLog Check,{{ error_log_status }},{{ error_desc_log_error | trim }}"
     create: yes
     insertafter: EOF
   delegate_to: localhost
@@ -76,7 +101,7 @@
 - name: Log Virtual Host ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.1,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status }}"
+    line: "{{ inventory_hostname }},6.1,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status }}, {{error_desc_virtual_host | trim }}"
     create: yes
     insertafter: EOF
   delegate_to: localhost
