@@ -1,13 +1,20 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    keepalive_status: "not compliant"
+    keepalive_status: "check failed"
 
 
 - name: Check KeepAlive directive value
   ansible.builtin.command: >-
-    grep -i '^KeepAlive\s+On$' {{ apache_conf_dir }}/conf/httpd.conf
+    grep -i '^KeepAlive On' {{ apache_conf_dir }}/conf/httpd.conf
   register: keepalive_check
   changed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ keepalive_check.stderr }}"
+  when: keepalive_check.rc != 0
   ignore_errors: yes
 
 
@@ -20,6 +27,6 @@
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},9.2,Apache KeepAlive Configuration,{{ keepalive_status }}"
+    line: "{{ inventory_hostname }},9.2,Apache KeepAlive Configuration,{{ keepalive_status }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
