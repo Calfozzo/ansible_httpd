@@ -11,6 +11,11 @@
   changed_when: false
   ignore_errors: true
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ apache_shell_check.stderr }}"
+  when: apache_shell_check.rc != 0
+  ignore_errors: yes
 
 - name: Determine Apache login shell
   ansible.builtin.set_fact:
@@ -28,6 +33,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.2,apache_login_shell,{{ apache_shell_status }}"
+    line: "{{ inventory_hostname }},3.2,apache_login_shell,{{ apache_shell_status }},{{ error_desc }}"
     insertafter: EOF
   delegate_to: localhost
