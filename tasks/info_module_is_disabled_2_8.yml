@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    info_module_status: "not compliant"
+    info_module_status: "check failed"
 
 
 - name: Check if Info module is enabled
@@ -9,6 +9,13 @@
   failed_when: info_module_check.rc != 0
   changed_when: false
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ info_module_check.stderr }}"
+  when: info_module_check.rc != 0
+  ignore_errors: yes
 
 
 - name: Determine Info module status
@@ -21,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.8,info_module,{{ info_module_status }}"
+    line: "{{ inventory_hostname }},2.8,info_module,{{ info_module_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
