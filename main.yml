@@ -6,6 +6,7 @@
 
   vars:
     csv_file: "hardening_scanner_httpd.csv"
+    error_desc: ""
   
 
   tasks:
@@ -22,7 +23,7 @@
     - name: Create CSV header
       ansible.builtin.lineinfile:
         path: "{{ csv_file }}"
-        line: "Hostname,Number Task,Check,Status"
+        line: "Hostname,Number_Task,Check,Status,Error_Desc"
         create: yes
         #owner: awx
         #group: awx
