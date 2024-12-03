@@ -7,7 +7,7 @@
 
 - name: Extract root <Directory> element from Apache configuration files
   ansible.builtin.shell: |
-    perl -ne 'print if /^ *<Directory *\//i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf
+    awk '/<Directory *\//,/<\/Directory/' {{ apache_conf_dir }}/conf/httpd.conf
   register: directory_element
   changed_when: false
   ignore_errors: yes
