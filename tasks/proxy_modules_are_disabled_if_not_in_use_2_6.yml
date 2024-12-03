@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    proxy_modules_status: "not compliant"
+    proxy_modules_status: "check failed"
 
 
 - name: Check if proxy modules are enabled
@@ -10,6 +10,12 @@
   failed_when: proxy_modules_check.rc == 0  
   ignore_errors: true
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ proxy_modules_check.stderr }}"
+  when: proxy_modules_check.rc != 0
+  ignore_errors: yes
 
 - name: Determine proxy modules status
   ansible.builtin.set_fact:
@@ -21,6 +27,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},2.6,proxy_modules,{{ proxy_modules_status | trim }}"
+    line: "{{ inventory_hostname }},2.6,proxy_modules,{{ proxy_modules_status | trim }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
