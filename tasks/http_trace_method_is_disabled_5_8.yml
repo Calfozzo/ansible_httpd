@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    trace_enable_status: "not compliant"
+    trace_enable_status: "check failed"
 
 
 - name: Check for TraceEnable directive
@@ -11,6 +11,11 @@
   failed_when: false
   ignore_errors: true
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ trace_enable_check.stderr }}"
+  when: trace_enable_check.rc != 0
+  ignore_errors: yes
 
 - name: Set compliance status for TraceEnable
   ansible.builtin.set_fact:
@@ -21,7 +26,7 @@
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},5.8,Apache TraceEnable Configuration,{{ trace_enable_status }}"
+    line: "{{ inventory_hostname }},5.8,Apache TraceEnable Configuration,{{ trace_enable_status }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
   
