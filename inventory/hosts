@@ -3,8 +3,8 @@ localhost ansible_connection=local
 
 [LOCAL:vars]
 
-apache_conf_dir=/Users/esirolli/Dev/httpd
-apache_bin_dir=/opt/homebrew/opt/httpd
+apache_conf_dir=/etc/httpd
+apache_bin_dir=/usr/sbin/httpd
 
 # [RHEL7]
 # your_rhel7_host ansible_host=xx.xx.xx.xx

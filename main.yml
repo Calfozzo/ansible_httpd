@@ -5,7 +5,7 @@
 
 
   vars:
-    csv_file: "your_path_for_csv/hardening_scanner_httpd.csv"
+    csv_file: "hardening_scanner_httpd.csv"
   
 
   tasks:
