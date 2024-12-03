@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    other_write_access_status: "not compliant"
+    other_write_access_status: "check failed"
 
 
 - name: Identify files or directories in Apache directory with other write access (excluding symlinks)
@@ -10,6 +10,12 @@
   failed_when: other_write_access_check.rc != 0  
   ignore_errors: true 
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ other_write_access_check.stderr }}"
+  when: other_write_access_check.rc != 0
+  ignore_errors: yes
 
 - name: Determine if files/directories with other write access exist
   ansible.builtin.set_fact:
@@ -21,6 +27,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.6,Other Write Access on Apache Directories and Files Is Restricted,{{ other_write_access_status }}"
+    line: "{{ inventory_hostname }},3.6,Other Write Access on Apache Directories and Files Is Restricted,{{ other_write_access_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
