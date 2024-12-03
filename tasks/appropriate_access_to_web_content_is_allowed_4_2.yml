@@ -8,7 +8,7 @@
 
 - name: Extract all <Directory> elements from Apache configuration files
   ansible.builtin.shell: |
-    perl -ne 'print if /^ *<Directory */i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
+    awk '/<Directory/,/<\/Directory/' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: directory_elements
   changed_when: false
   ignore_errors: yes
@@ -16,7 +16,7 @@
 
 - name: Extract all <Location> elements from Apache configuration files
   ansible.builtin.shell: |
-    perl -ne 'print if /^ *<Location */i .. /<\/Location/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
+    awk '/<Location/,/<\/Location/' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: location_elements
   changed_when: false
   ignore_errors: yes
