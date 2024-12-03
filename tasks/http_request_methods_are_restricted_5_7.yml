@@ -1,11 +1,11 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    order_deny_allow_status: "not compliant"
+    order_deny_allow_status: "check failed"
     directory_elements: ""
     require_method_check: false
     order_deny_allow_check: false
-    require_method_status: "not compliant"
-    overall_compliance_status: "not compliant"
+    require_method_status: "check failed"
+    overall_compliance_status: "check failed"
 
 
 - name: Locate Apache configuration files
@@ -14,6 +14,13 @@
     patterns: "*.conf"
   register: apache_conf_files
   ignore_errors: true
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ apache_conf_files.stderr }}"
+  when: apache_conf_files.rc != 0
+  ignore_errors: yes
 
 
 - name: Read contents of Apache configuration files
@@ -70,6 +77,6 @@
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},5.7,Apache Directory Configuration,{{ overall_compliance_status }}"
+    line: "{{ inventory_hostname }},5.7,Apache Directory Configuration,{{ overall_compliance_status }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
