@@ -1,6 +1,6 @@
 - name: Set Default status
   ansible.builtin.set_fact:
-    directory_match_status: "not compliant"
+    directory_match_status: "check failed"
 
 - name: Verify the presence of DirectoryMatch directive for .git
   ansible.builtin.shell: |
@@ -12,6 +12,12 @@
     fi
   register: directory_match_check
   ignore_errors: yes
+
+
+- name: Set error description if DirectoryMatch check fails
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_match_check.stderr }}"
+  when: directory_match_check.rc != 0
 
 - name: Set the directory match status
   ansible.builtin.set_fact:
@@ -25,6 +31,6 @@
 - name: Log the compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},5.11,access_to_git_files_is_restricted,{{ directory_match_status }}"
+    line: "{{ inventory_hostname }},5.11,access_to_git_files_is_restricted,{{ directory_match_status },{{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
