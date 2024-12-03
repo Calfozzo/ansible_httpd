@@ -17,6 +17,7 @@
   ansible.builtin.set_fact:
     error_desc: "{{ directory_output.stderr }}"
   when: directory_output.rc != 0
+  ignore_errors: yes
 
 - name: Set root_directory_status based on the presence of <Directory> element
   ansible.builtin.set_fact:
