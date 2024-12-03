@@ -33,6 +33,6 @@
 - name: Log the compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},5.11,access_to_git_files_is_restricted,{{ directory_match_status },{{ error_desc | trim }}"
+    line: "{{ inventory_hostname }},5.11,access_to_git_files_is_restricted,{{ directory_match_status }},{{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
