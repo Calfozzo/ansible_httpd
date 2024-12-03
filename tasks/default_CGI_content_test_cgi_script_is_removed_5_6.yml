@@ -11,6 +11,13 @@
   ignore_errors: yes  
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ test_cgi_check.stderr }}"
+  when: test_cgi_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Set test_cgi_status compliance
   ansible.builtin.set_fact:
     test_cgi_status: "{{ 'compliant' if test_cgi_check.rc != 0 or test_cgi_check.stdout == '' else 'not compliant' }}"
@@ -21,6 +28,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},5.6,test_cgi_check_id,{{ test_cgi_status }}"
+    line: "{{ inventory_hostname }},5.6,test_cgi_check_id,{{ test_cgi_status }},{{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost

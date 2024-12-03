@@ -11,6 +11,13 @@
   ignore_errors: yes
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ printenv_check.stderr }}"
+  when: printenv_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Set cgi-bin compliance status
   ansible.builtin.set_fact:
     cgi_status: "{{ 'compliant' if printenv_check.rc != 0 or printenv_check.stdout == '' else 'not compliant' }}"
@@ -21,7 +28,7 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},5.5,cgi_bin_compliance,{{ cgi_status }}"
+    line: "{{ inventory_hostname }},5.5,cgi_bin_compliance,{{ cgi_status }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
   
