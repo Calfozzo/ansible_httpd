@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact: 
-    options_status: "not compliant"
+    options_status: "check failed"
 
 
 - name: Check for <Directory> elements in Apache configuration files
@@ -8,6 +8,13 @@
     perl -ne 'print if /^ *<Directory */i .. /<\/Directory/i' {{ apache_conf_dir }}/conf/httpd.conf {{ apache_conf_dir }}/conf.d/*.conf
   register: directory_check
   changed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ directory_check.stderr }}"
+  when: directory_check.rc != 0
   ignore_errors: yes
 
 
@@ -26,6 +33,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},5.3,directory_options_includes,{{ options_status | trim }}"
+    line: "{{ inventory_hostname }},5.3,directory_options_includes,{{ options_status | trim }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
