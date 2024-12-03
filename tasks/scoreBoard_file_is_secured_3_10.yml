@@ -1,15 +1,22 @@
 - name: Set Default
   ansible.builtin.set_fact:
     scoreboard_file_status: "not specified"
-    ownership_status: "not compliant"
-    filesystem_compliance: "not compliant"
-    overall_compliance: "not compliant"
+    ownership_status: "check failed"
+    filesystem_compliance: "check failed"
+    overall_compliance: "check failed"
     
 
 - name: Check if ScoreBoardFile is specified in Apache configuration
   ansible.builtin.shell: "grep -r 'ScoreBoardFile' {{ apache_conf_dir }}/conf/*.conf"
   register: scoreboard_file_check
   changed_when: false
+  ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ scoreboard_file_check.stderr }}"
+  when: scoreboard_file_check.rc != 0
   ignore_errors: yes
 
 
@@ -82,6 +89,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.10,scoreboard_file,{{ overall_compliance | trim }}"
+    line: "{{ inventory_hostname }},3.10,scoreboard_file,{{ overall_compliance | trim }}, {{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
