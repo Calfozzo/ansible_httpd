@@ -9,6 +9,14 @@
   failed_when: non_root_files_check.rc != 0
   ignore_errors: true
 
+
+    - name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ non_root_files_check.stderr }}"
+  when: non_root_files_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Determine if non-root files exist
   ansible.builtin.set_fact:
     non_root_files_status: "{{ 'not compliant' if non_root_files_check.stdout != '' else 'compliant' }}"
@@ -18,6 +26,6 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.4,Apache Directories and Files Are Owned By Root,{{ non_root_files_status }}"
+    line: "{{ inventory_hostname }},3.4,Apache Directories and Files Are Owned By Root,{{ non_root_files_status }},{{ error_desc | trim }}"
     insertafter: EOF
   delegate_to: localhost
