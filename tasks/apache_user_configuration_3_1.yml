@@ -1,7 +1,7 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    apache_user: "not compliant"
-    apache_user_status: "not compliant"
+    apache_user: "check failed"
+    apache_user_status: "check failed"
 
 
 - name: Check Apache User Configuration
@@ -11,7 +11,14 @@
   failed_when: false 
   ignore_errors: true 
 
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ apache_user_check.stderr }}"
+  when: apache_user_check.rc != 0
+  ignore_errors: yes
   
+
 - name: Set Apache user variable
   ansible.builtin.set_fact:
     apache_user: "{{ apache_user_check.stdout.split()[1] if apache_user_check.stdout | length > 0 else 'not found' }}"
@@ -44,5 +51,5 @@
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
     create: yes
-    line: "{{ inventory_hostname }},3.1,apache_user,{{ apache_user_status | trim }}"
+    line: "{{ inventory_hostname }},3.1,apache_user,{{ apache_user_status | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost
