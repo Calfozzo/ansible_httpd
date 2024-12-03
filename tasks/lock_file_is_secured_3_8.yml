@@ -3,7 +3,7 @@
     lock_file_directory: ""
     lock_directory_stat: ""
     lock_directory_validation: ""
-    mutex_validation_status: "checl failed"
+    mutex_validation_status: "check failed"
 
 - name: Check if Mutex directive is configured with fcntl, flock, or file
   ansible.builtin.shell: "grep -R 'Mutex' {{ apache_conf_dir }}/conf/*.conf"
