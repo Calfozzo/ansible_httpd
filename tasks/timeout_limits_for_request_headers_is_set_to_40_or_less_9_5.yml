@@ -1,6 +1,6 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    timeout_status: "not compliant"
+    timeout_status: "check failed"
 
 
 - name: Locate Apache configuration files including conf.d directory
@@ -18,6 +18,12 @@
   ignore_errors: yes
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ request_read_timeout_check.stderr }}"
+  when: request_read_timeout_check.rc != 0
+  ignore_errors: yes
+
 - name: Determine compliance status for RequestReadTimeout
   ansible.builtin.set_fact:
     timeout_status: >-
@@ -34,5 +40,5 @@
 - name: Write compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},9.5,RequestReadTimeout,{{ timeout_status | trim }}"
+    line: "{{ inventory_hostname }},9.5,RequestReadTimeout,{{ timeout_status | trim }}, {{ error_desc | trim }}"
   delegate_to: localhost
