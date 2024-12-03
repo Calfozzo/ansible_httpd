@@ -10,7 +10,7 @@
   ignore_errors: true
 
 
-    - name: Set error description
+- name: Set error description
   ansible.builtin.set_fact:
     error_desc: "{{ non_root_files_check.stderr }}"
   when: non_root_files_check.rc != 0
