@@ -1,14 +1,22 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    ssl_insecure_renegotiation_status: "not compliant"
+    error_desc: ""
+    ssl_insecure_renegotiation_status: "check failed"
 
 
 - name: Verify the SSLInsecureRenegotiation off directive in Apache configuration
   ansible.builtin.shell: |
-    grep -i "SSLInsecureRenegotiation\s+off$" {{ apache_conf_dir }}/conf/httpd.conf
+    grep -i "SSLInsecureRenegotiation off$" {{ apache_conf_dir }}/conf/httpd.conf
   register: ssl_insecure_renegotiation_off_check
   changed_when: false
   ignore_errors: yes
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ ssl_insecure_renegotiation_off_check.stderr }}"
+  when: ssl_insecure_renegotiation_off_check.rc != 0
+  ignore_errors: yes
+
 
 - name: Verify the SSLInsecureRenegotiation off directive in Apache configuration
   ansible.builtin.shell: |
@@ -16,6 +24,14 @@
   register: ssl_insecure_renegotiation_check
   changed_when: false
   ignore_errors: yes
+
+
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ error_desc }}        {{ ssl_insecure_renegotiation_check.stderr }}"
+  when: ssl_insecure_renegotiation_check.rc != 0
+  ignore_errors: yes
+
 
 - name: Set compliance status for SSLInsecureRenegotiation directive
   ansible.builtin.set_fact:
@@ -31,7 +47,7 @@
 - name: Record compliance status for SSLInsecureRenegotiation directive
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},7.6,ssl_insecure_renegotiation_status,{{ ssl_insecure_renegotiation_status | trim }}"
+    line: "{{ inventory_hostname }},7.6,ssl_insecure_renegotiation_status,{{ ssl_insecure_renegotiation_status | trim }},{{ error_desc | trim }}"
     create: yes
     insertafter: EOF
   delegate_to: localhost
