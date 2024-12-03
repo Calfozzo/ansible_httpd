@@ -1,6 +1,6 @@
 - name: Set Default
   set_fact:
-    ssl_protocol_status: "not compliant"
+    ssl_protocol_status: "check failed"
 
 
 - name: Verify the SSLProtocol directive is configured correctly in Apache
@@ -9,6 +9,11 @@
   register: ssl_protocol_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc: "{{ ssl_protocol_check.stderr }}"
+  when: ssl_protocol_check.rc != 0
+  ignore_errors: yes
 
 - name: Set compliance status for SSLProtocol directive
   set_fact:
@@ -19,6 +24,6 @@
 - name: Record compliance status for SSLProtocol directive
   lineinfile:
     path: "{{ csv_file}}"
-    line: "{{ inventory_hostname }},7.4,ssl_protocol_status,{{ ssl_protocol_status | trim }}"
+    line: "{{ inventory_hostname }},7.4,ssl_protocol_status,{{ ssl_protocol_status | trim }}, {{ error_desc | trim }}"
     create: yes
   delegate_to: localhost
