@@ -16,7 +16,7 @@
   ignore_errors: yes
 
 
-  - name: Set error description
+- name: Set error description
   ansible.builtin.set_fact:
     error_desc: "{{ directory_match_check.stderr }}"
   when: directory_match_check.rc != 0
