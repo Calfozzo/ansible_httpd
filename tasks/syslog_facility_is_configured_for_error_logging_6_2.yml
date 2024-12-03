@@ -1,7 +1,9 @@
 - name: Set Default
   ansible.builtin.set_fact:
-    error_log_status: "not compliant"
-    virtual_host_error_log_status: "not compliant"
+    error_desc_error_log: ""
+    error_desc_virtual_host: ""
+    error_log_status: "check failed"
+    virtual_host_error_log_status: "check failed"
 
 
 - name: Verify ErrorLog directive for syslog facility
@@ -14,6 +16,11 @@
   register: error_log_check
   ignore_errors: yes
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_error_log: "{{ error_log_check.stderr }}"
+  when: error_log_check.rc != 0
+  ignore_errors: yes
 
 - name: Set the error log compliance status
   ansible.builtin.set_fact:
@@ -35,6 +42,13 @@
   ignore_errors: yes
 
 
+- name: Set error description
+  ansible.builtin.set_fact:
+    error_desc_virtual_host: "{{ virtual_host_error_log_check.stderr }}"
+  when: virtual_host_error_log_check.rc != 0
+  ignore_errors: yes
+
+
 - name: Set the virtual host error log compliance status
   ansible.builtin.set_fact:
     virtual_host_error_log_status: "{{ 'not compliant' if virtual_host_error_log_check.rc != 0 else 'compliant' }}"
@@ -44,7 +58,7 @@
 - name: Log compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.2,ErrorLog Check,{{ error_log_status | trim }}"
+    line: "{{ inventory_hostname }},6.2,ErrorLog Check,{{ error_log_status | trim }}, {{ error_desc_error_log | trim }}"
     create: yes
   delegate_to: localhost
 
@@ -52,6 +66,6 @@
 - name: Log Virtual Host ErrorLog compliance status to CSV
   ansible.builtin.lineinfile:
     path: "{{ csv_file }}"
-    line: "{{ inventory_hostname }},6.2,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status | trim }}"
+    line: "{{ inventory_hostname }},6.2,Virtual Host ErrorLog Check,{{ virtual_host_error_log_status | trim }}, {{ error_desc_virtual_host | trim }}"
     create: yes
   delegate_to: localhost
